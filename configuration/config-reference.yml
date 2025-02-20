@@ -1,0 +1,43 @@
+# Logging configuration
+log:
+  # 'debug', 'info', 'warn' or 'error'. Defaults to 'info'
+  level: info
+  # 'text' or 'json'. Defaults to 'text'
+  format: text
+
+# HTTP server configuration
+http:
+  # The address to listen on in 'host:port' format. Defaults to ':80'.
+  addr: ":80"
+  # Path to the TLS certificate/key file to use for HTTPS. If not specified, the server will listen use HTTP.
+  certificate: /path/to/cert.pem
+  key: /path/to/key.pem
+  # Secret key to use to verify session cookies. This is a required directive that has no default value.
+  sessionKey: thisisaverysecretkey
+
+# Database (PostgreSQL) configuration
+database:
+  host: localhost
+  name: regauth
+  user: regauth
+  password: password
+  # The port that the database listens on. Defaults to '5432'.
+  port: 5432
+
+# Token signing configuration, this should match the registry configuration.
+token:
+  issuer: "Registry authentication server"
+  service: "Docker registry"
+  certificate: /path/to/certificate.pem
+  key: /path/to/key.pem
+  alg: RS256
+
+# Authentication configuration for accessing the application itself.
+# This is currently unused, but will be used once multiple different authentication back-ends are added.
+auth:
+  local:
+    enabled: true
+
+# Docker registry details. Currently only used for display purposes in the front-end.
+registry:
+  host: localhost:5000

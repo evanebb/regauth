@@ -18,12 +18,21 @@ services:
       - "127.0.0.1:8080:80"
     read_only: true
     volumes:
-      - ./keys/key.pem:/etc/regauth/key.pem:ro
       - ./keys/cert.pem:/etc/regauth/cert.pem:ro
-      - ./examples/config-dev.yml:/etc/regauth/config.yml:ro
+      - ./keys/key.pem:/etc/regauth/key.pem:ro
     environment:
+      REGAUTH_LOG_LEVEL: debug
+      REGAUTH_HTTP_SESSIONKEY: thisisaverysecretkey
+      REGAUTH_DATABASE_HOST: postgres
+      REGAUTH_DATABASE_NAME: regauth
       REGAUTH_DATABASE_USER: regauth
       REGAUTH_DATABASE_PASSWORD: Welkom01
+      REGAUTH_TOKEN_ISSUER: localhost:8080
+      REGAUTH_TOKEN_SERVICE: localhost:5000
+      REGAUTH_TOKEN_CERTIFICATE: /etc/regauth/cert.pem
+      REGAUTH_TOKEN_KEY: /etc/regauth/key.pem
+      REGAUTH_TOKEN_ALG: RS256
+      REGAUTH_REGISTRY_HOST: localhost:5000
 
   postgres:
     image: postgres:17
