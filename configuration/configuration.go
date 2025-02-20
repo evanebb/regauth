@@ -25,12 +25,17 @@ func SetDefaults(v *viper.Viper) {
 
 func (c Configuration) IsValid() error {
 	errs := newErrorCollection()
+
 	c.HTTP.isValid(errs)
 	c.Database.isValid(errs)
 	c.Token.isValid(errs)
 	c.Registry.isValid(errs)
 
-	return errs
+	if errs.HasErrors() {
+		return errs
+	}
+
+	return nil
 }
 
 type Log struct {

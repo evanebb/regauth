@@ -7,10 +7,18 @@ type errorCollection struct {
 }
 
 func newErrorCollection() *errorCollection {
-	return &errorCollection{errs: make([]error, 0)}
+	return &errorCollection{make([]error, 0)}
+}
+
+func (c *errorCollection) HasErrors() bool {
+	return len(c.errs) > 0
 }
 
 func (c *errorCollection) Add(err error) {
+	if err == nil {
+		return
+	}
+
 	c.errs = append(c.errs, err)
 }
 
