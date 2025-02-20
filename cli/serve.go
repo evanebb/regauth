@@ -45,8 +45,7 @@ func buildConfiguration(args []string) (*configuration.Configuration, error) {
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	setDefaults(v)
-
+	configuration.SetDefaults(v)
 	v.SetConfigFile(configurationFile)
 	err := v.ReadInConfig()
 	if err != nil {
@@ -60,13 +59,5 @@ func buildConfiguration(args []string) (*configuration.Configuration, error) {
 		return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
 	}
 
-	return conf, nil
-}
-
-func setDefaults(v *viper.Viper) {
-	v.SetDefault("log.level", "info")
-	v.SetDefault("log.formatter", "text")
-	v.SetDefault("addr", ":80")
-	v.SetDefault("database.port", 5432)
-	v.SetDefault("auth.local.enabled", true)
+	return conf, fmt.Errorf("invalid configuration: %s", conf.IsValid())
 }
