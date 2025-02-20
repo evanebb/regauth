@@ -1,0 +1,35 @@
+{{define "title"}}{{.Namespace}}/{{.Name}}{{end}}
+{{define "main"}}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/ui/repositories">Repositories</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{.Namespace}}/{{.Name}}</li>
+    </ol>
+</nav>
+<div class="d-flex justify-content-between mb-3">
+    <h1 class="fs-4">Details</h1>
+    <form method="POST" action="/ui/repositories/{{.ID}}">
+        <input type="hidden" name="_method" value="DELETE">
+        <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+</div>
+<div class="mb-3 d-flex">
+    <div class="input-group">
+        <div class="form-floating">
+            <input type="text" id="namespace" class="form-control" readonly value="{{.Namespace}}"
+                   placeholder="namespace">
+            <label for="namespace">Namespace</label>
+        </div>
+        <div class="form-floating">
+            <input type="text" id="name" class="form-control" readonly value="{{.Name}}"
+                   placeholder="name">
+            <label for="name">Name</label>
+        </div>
+    </div>
+</div>
+<div class="form-floating mb-3">
+    <input id="visibility" type="text" class="form-control" readonly
+           value="{{.Visibility.HumanReadable}}" placeholder="visibility">
+    <label for="visibility">Visibility</label>
+</div>
+{{end}}

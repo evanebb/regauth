@@ -1,0 +1,56 @@
+{{define "title"}}Create new personal access token{{end}}
+{{define "main"}}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/ui/account">Manage account</a></li>
+            <li class="breadcrumb-item"><a href="/ui/account/tokens">Personal access tokens</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Create new personal access token</li>
+        </ol>
+    </nav>
+    <form method="POST" action="/ui/account/tokens" class="needs-validation" novalidate>
+        <h1 class="fs-4 mb-3">Create new personal access token</h1>
+        <div class="mb-4">
+            <div class="form-floating mb-3">
+                <input type="text" id="description" name="description" class="form-control" placeholder="description"
+                       required>
+                <label for="description">Description</label>
+            </div>
+            <div class="form-floating mb-3">
+                <select id="permissionType" name="permissionType" class="form-select" required>
+                    <option value="readOnly" selected>Read-only</option>
+                    <option value="readWrite">Read and write</option>
+                    <option value="readWriteDelete">Read, write and delete</option>
+                </select>
+                <label for="permissionType">Permission</label>
+            </div>
+            <div class="form-floating mb-3">
+                <select id="expirationType" name="expirationType" class="form-select"
+                        hx-on:change="handleExpirationTypeUpdate()">
+                    <option value="7d" selected>7 days</option>
+                    <option value="30d">30 days</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <label for="expirationType">Expiration</label>
+            </div>
+            <div class="mb-3">
+                <input type="date" id="customExpirationDate" name="customExpirationDate" class="form-control d-none"
+                       placeholder="customExpirationDate" required>
+                <label for="customExpirationDate" class="d-none">Expiration date</label>
+            </div>
+        </div>
+        <div class="btn-group" role="group">
+            <button class="btn btn-primary" type="submit">Create</button>
+            <a type="button" class="btn btn-danger" href="/ui/account/tokens">Cancel</a>
+        </div>
+    </form>
+{{end}}
+{{define "script"}}
+    <script>
+        function handleExpirationTypeUpdate() {
+            const expirationTypeSelect = document.querySelector('#expirationType');
+            const expirationInput = document.querySelector('#customExpirationDate');
+
+            expirationTypeSelect.value === 'custom' ? expirationInput.classList.remove('d-none') : expirationInput.classList.add('d-none');
+        }
+    </script>
+{{end}}

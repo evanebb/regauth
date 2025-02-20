@@ -1,0 +1,33 @@
+{{define "title"}}View personal access token{{end}}
+{{define "main"}}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/ui/account">Manage account</a></li>
+        <li class="breadcrumb-item"><a href="/ui/account/tokens">Personal access tokens</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ .Token.Description }}</li>
+    </ol>
+</nav>
+<div class="d-flex justify-content-between mb-3">
+    <h1 class="fs-4">Details</h1>
+    <form method="POST" action="/ui/account/tokens/{{ .Token.ID }}">
+        <input type="hidden" name="_method" value="DELETE">
+        <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+</div>
+<div class="form-floating mb-3">
+    <input type="text" id="description" class="form-control" readonly value="{{ .Token.Description }}">
+    <label for="description">Description</label>
+</div>
+<div class="form-floating mb-3">
+    <input type="text" id="permission" class="form-control" readonly
+           value="{{ .Token.PermissionType.HumanReadable }}">
+    <label for="permission">Permission</label>
+</div>
+<div class="form-floating mb-3">
+    <input id="expirationDate" type="text" class="form-control" readonly
+           value="{{ .Token.ExpirationDate.Format "2006-01-02" }}">
+    <label for="expirationDate">Expiration date</label>
+</div>
+<h1 class="fs-4 mt-4">Usage log</h1>
+{{template "partial" .}}
+{{end}}

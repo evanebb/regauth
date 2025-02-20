@@ -1,0 +1,48 @@
+{{define "title"}}Personal access tokens{{end}}
+{{define "main"}}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/ui/account">Manage account</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Personal access tokens</li>
+    </ol>
+</nav>
+<div class="d-flex justify-content-between mb-3">
+    <h1 class="fs-4">Overview</h1>
+    <a class="btn btn-primary" role="button" href="/ui/account/tokens/create">Create new personal access token</a>
+</div>
+<table class="table{{if .}} table-hover{{end}}">
+    <thead>
+    <tr>
+        <th scope="col">Description</th>
+        <th scope="col">Permission</th>
+        <th scope="col">Expiration date</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{if not .}}
+        <tr>
+            <td class="text-center p-5" colspan="3">
+                <i class="bi bi-plug d-block fs-2"></i>
+                <span class="fw-semibold">No personal access tokens found!</span>
+            </td>
+        </tr>
+    {{end}}
+    {{range .}}
+    <tr>
+        <td class="p-0">
+            <a class="d-block text-reset text-decoration-none p-2"
+               href="/ui/account/tokens/{{ .ID }}">{{ .Description }}</a>
+        </td>
+        <td class="p-0">
+            <a class="d-block text-reset text-decoration-none p-2"
+               href="/ui/account/tokens/{{ .ID }}">{{ .PermissionType.HumanReadable }}</a>
+        </td>
+        <td class="p-0">
+            <a class="d-block text-reset text-decoration-none p-2"
+               href="/ui/account/tokens/{{ .ID }}">{{ .ExpirationDate.Format "2006-01-02" }}</a>
+        </td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}

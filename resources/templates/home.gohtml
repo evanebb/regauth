@@ -1,0 +1,10 @@
+{{define "title"}}Homepage{{end}}
+{{ define "main" }}
+    <h1>Welcome!</h1>
+    <p>Under the <a href="/ui/explore">Explore</a> tab, you can explore and find public repositories from all users.</p>
+    {{ if currentUser}}
+        <p>Under the <a href="/ui/repositories">Repositories</a> tab, you can find and manage your own repositories.</p>
+        <p>In order to access your own private repositories on the container registry, you should create a <a
+                    href="/ui/account/tokens">personal access token</a>.</p>
+    {{end}}
+{{ end }}

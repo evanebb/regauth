@@ -1,0 +1,24 @@
+log:
+  level: info
+  format: text
+
+http:
+  addr: :8080
+  # This should be set to a secure, randomly generated value in production!
+  sessionKey: thisisaverysecretkey
+
+database:
+  host: localhost
+  name: regauth
+  user: regauth
+  password: Welkom01
+
+token:
+  issuer: localhost:8080
+  service: localhost:5000
+  certificate: keys/cert.pem
+  key: keys/key.pem
+  alg: RS256
+
+registry:
+  host: localhost:5000

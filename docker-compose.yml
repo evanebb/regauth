@@ -1,0 +1,47 @@
+services:
+  registry:
+    image: registry:3.0.0-rc.3
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ./registry-config.yml:/etc/distribution/config.yml:ro
+      - ./keys/cert.pem:/etc/distribution/cert.pem:ro
+    environment:
+      OTEL_TRACES_EXPORTER: none
+
+  regauth:
+    profiles: [ regauth ]
+    image: localhost/evanebb/regauth:latest
+    depends_on:
+      - postgres
+    ports:
+      - "127.0.0.1:8080:80"
+    read_only: true
+    volumes:
+      - ./keys/key.pem:/etc/regauth/key.pem:ro
+      - ./keys/cert.pem:/etc/regauth/cert.pem:ro
+      - ./examples/config-dev.yml:/etc/regauth/config.yml:ro
+    environment:
+      REGAUTH_DATABASE_USER: regauth
+      REGAUTH_DATABASE_PASSWORD: Welkom01
+
+  postgres:
+    image: postgres:17
+    command:
+      - postgres
+      - -c
+      - log_statement=all
+      - -c
+      - log_destination=stderr
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: regauth
+      POSTGRES_DB: regauth
+      POSTGRES_PASSWORD: Welkom01
+    volumes:
+      - ./resources/database/schema:/docker-entrypoint-initdb.d:ro
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data: { }

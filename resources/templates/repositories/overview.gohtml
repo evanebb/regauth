@@ -1,0 +1,21 @@
+{{define "title"}}Repositories{{end}}
+{{define "main"}}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Repositories</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <input class="form-control" type="search" id="q"
+                   name="q" placeholder="Search" aria-label="Search"
+                   hx-get="/ui/repositories"
+                   hx-trigger="input changed delay:250ms, key[key=='Enter'], load"
+                   hx-target="#content"
+                   hx-replace-url="true"
+                   hx-include="#pageSize">
+        </div>
+        <a class="btn btn-primary" role="button" href="/ui/repositories/create">Create new repository</a>
+    </div>
+    {{template "partial" .}}
+{{end}}
