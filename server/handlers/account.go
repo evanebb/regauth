@@ -99,10 +99,18 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 		token := pat.PersonalAccessToken{
 			ID:             uuid.New(),
 			Hash:           hash,
-			Description:    r.PostFormValue("description"),
+			Description:    pat.Description(r.PostFormValue("description")),
 			Permission:     pat.Permission(r.PostFormValue("permission")),
 			ExpirationDate: exp,
 			UserID:         u.ID,
+		}
+
+		err = token.IsValid()
+		if err != nil {
+			l.Debug("invalid personal access token given", "error", err)
+			w.WriteHeader(http.StatusBadRequest)
+			t.RenderBase(w, r, nil, "errors/400.gohtml")
+			return
 		}
 
 		err = patStore.Create(r.Context(), token)
@@ -288,15 +296,15 @@ func UserOverview(l *slog.Logger, t template.Templater, userStore user.Store) ht
 	}
 }
 
-func filterUsersByUsername(u []user.User, username string) []user.User {
+func filterUsersByUsername(users []user.User, username string) []user.User {
 	if username == "" {
-		return u
+		return users
 	}
 
 	var filtered []user.User
-	for _, user := range u {
-		if strings.Contains(user.Username, username) {
-			filtered = append(filtered, user)
+	for _, u := range users {
+		if strings.Contains(u.Username.String(), username) {
+			filtered = append(filtered, u)
 		}
 	}
 
@@ -381,10 +389,18 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 
 		u := user.User{
 			ID:        uuid.New(),
-			Username:  r.PostFormValue("username"),
+			Username:  user.Username(r.PostFormValue("username")),
 			FirstName: r.PostFormValue("firstName"),
 			LastName:  r.PostFormValue("lastName"),
 			Role:      user.Role(r.PostFormValue("role")),
+		}
+
+		err = u.IsValid()
+		if err != nil {
+			l.Debug("invalid user given", "error", err)
+			w.WriteHeader(http.StatusBadRequest)
+			t.RenderBase(w, r, nil, "errors/400.gohtml")
+			return
 		}
 
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(r.PostFormValue("password")), bcrypt.DefaultCost)
@@ -397,7 +413,7 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 
 		authUser := local.AuthUser{
 			ID:           u.ID,
-			Username:     u.Username,
+			Username:     u.Username.String(),
 			PasswordHash: passwordHash,
 		}
 

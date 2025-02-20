@@ -34,6 +34,11 @@ func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 			return users, err
 		}
 
+		err = u.IsValid()
+		if err != nil {
+			return users, err
+		}
+
 		users = append(users, u)
 	}
 
@@ -45,11 +50,15 @@ func (s UserStore) GetByID(ctx context.Context, id uuid.UUID) (user.User, error)
 
 	query := "SELECT uuid, username, firstname, lastname, role FROM users WHERE uuid = $1"
 	err := s.db.QueryRow(ctx, query, id).Scan(&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Role)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return u, user.ErrNotFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return u, user.ErrNotFound
+		}
+
+		return u, err
 	}
 
-	return u, err
+	return u, u.IsValid()
 }
 
 func (s UserStore) GetByUsername(ctx context.Context, username string) (user.User, error) {
@@ -57,11 +66,15 @@ func (s UserStore) GetByUsername(ctx context.Context, username string) (user.Use
 
 	query := "SELECT uuid, username, firstname, lastname, role FROM users WHERE username = $1"
 	err := s.db.QueryRow(ctx, query, username).Scan(&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Role)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return u, user.ErrNotFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return u, user.ErrNotFound
+		}
+
+		return u, err
 	}
 
-	return u, err
+	return u, u.IsValid()
 }
 
 func (s UserStore) Create(ctx context.Context, u user.User) error {

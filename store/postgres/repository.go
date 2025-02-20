@@ -34,6 +34,11 @@ func (s RepositoryStore) GetAllByOwner(ctx context.Context, ownerId uuid.UUID) (
 			return repositories, err
 		}
 
+		err = r.IsValid()
+		if err != nil {
+			return repositories, err
+		}
+
 		repositories = append(repositories, r)
 	}
 
@@ -57,6 +62,11 @@ func (s RepositoryStore) GetAllPublic(ctx context.Context) ([]repository.Reposit
 			return repositories, err
 		}
 
+		err = r.IsValid()
+		if err != nil {
+			return repositories, err
+		}
+
 		repositories = append(repositories, r)
 	}
 
@@ -68,11 +78,15 @@ func (s RepositoryStore) GetByNamespaceAndName(ctx context.Context, namespace st
 
 	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE namespace = $1 AND name = $2"
 	err := s.db.QueryRow(ctx, query, namespace, name).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.OwnerID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return r, repository.ErrNotFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return r, repository.ErrNotFound
+		}
+
+		return r, err
 	}
 
-	return r, err
+	return r, r.IsValid()
 }
 
 func (s RepositoryStore) GetByID(ctx context.Context, id uuid.UUID) (repository.Repository, error) {
@@ -80,11 +94,15 @@ func (s RepositoryStore) GetByID(ctx context.Context, id uuid.UUID) (repository.
 
 	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE uuid = $1"
 	err := s.db.QueryRow(ctx, query, id).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.OwnerID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return r, repository.ErrNotFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return r, repository.ErrNotFound
+		}
+
+		return r, err
 	}
 
-	return r, err
+	return r, r.IsValid()
 }
 
 func (s RepositoryStore) Create(ctx context.Context, r repository.Repository) error {

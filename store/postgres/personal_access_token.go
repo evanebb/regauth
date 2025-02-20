@@ -36,6 +36,12 @@ func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid
 		}
 
 		t.Permission = permissionFromDatabaseMap[pt]
+
+		err = t.IsValid()
+		if err != nil {
+			return tokens, err
+		}
+
 		tokens = append(tokens, t)
 	}
 
@@ -48,12 +54,16 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (pa
 
 	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE uuid = $1"
 	err := s.db.QueryRow(ctx, query, id).Scan(&t.ID, &t.Hash, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return t, pat.ErrNotFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return t, pat.ErrNotFound
+		}
+
+		return t, err
 	}
 
 	t.Permission = permissionFromDatabaseMap[pt]
-	return t, err
+	return t, t.IsValid()
 }
 
 func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAccessToken) error {

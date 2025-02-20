@@ -90,7 +90,7 @@ func CreateRepositoryPage(l *slog.Logger, t template.Templater) http.HandlerFunc
 		data := struct {
 			Namespace string
 		}{
-			u.Username,
+			u.Username.String(),
 		}
 
 		t.RenderBase(w, r, data, "repositories/create.gohtml")
@@ -109,7 +109,7 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 
 		repo := repository.Repository{
 			ID:         uuid.New(),
-			Namespace:  u.Username,
+			Namespace:  u.Username.String(),
 			Name:       r.PostFormValue("name"),
 			Visibility: repository.Visibility(r.PostFormValue("visibility")),
 			OwnerID:    u.ID,
@@ -117,7 +117,7 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 
 		err = repo.IsValid()
 		if err != nil {
-			l.Debug("invalid repository given", "error", err, "repository", repo)
+			l.Debug("invalid repository given", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
 			t.RenderBase(w, r, nil, "errors/400.gohtml")
 			return
@@ -125,7 +125,7 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 
 		err = repoStore.Create(r.Context(), repo)
 		if err != nil {
-			l.Error("failed to create repository", "error", err, "repository", repo)
+			l.Error("failed to create repository", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
