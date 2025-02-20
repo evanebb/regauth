@@ -59,5 +59,10 @@ func buildConfiguration(args []string) (*configuration.Configuration, error) {
 		return nil, fmt.Errorf("failed to unmarshal configuration: %w", err)
 	}
 
-	return conf, fmt.Errorf("invalid configuration: %s", conf.IsValid())
+	err = conf.IsValid()
+	if err != nil {
+		return conf, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	return conf, err
 }
