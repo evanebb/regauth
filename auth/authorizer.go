@@ -78,7 +78,7 @@ func (a authorizer) authorizeResourceActions(ctx context.Context, p *pat.Persona
 		// If the user owns this repository, all actions are allowed
 		a.logger.Debug("user owns repository, all actions allowed", "repository", r.Name)
 		allowedActions = []string{"pull", "push", "delete"}
-	} else if repo.Visibility == repository.Public {
+	} else if repo.Visibility == repository.VisibilityPublic {
 		// If the user does not own this repository but it is public, pull access is allowed
 		a.logger.Debug("user does not own public repository, allowing pull access", "repository", r.Name, "repository", r.Name)
 		allowedActions = []string{"pull"}

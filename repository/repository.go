@@ -21,8 +21,13 @@ func (r Repository) IsValid() error {
 
 type Visibility string
 
+const (
+	VisibilityPublic  Visibility = "public"
+	VisibilityPrivate Visibility = "private"
+)
+
 func (v Visibility) IsValid() error {
-	if v != Public && v != Private {
+	if v != VisibilityPublic && v != VisibilityPrivate {
 		return errors.New("visibility is not valid, must be one of 'public', 'private'")
 	}
 
@@ -36,8 +41,3 @@ func (v Visibility) String() string {
 func (v Visibility) HumanReadable() string {
 	return cases.Title(language.Und).String(v.String())
 }
-
-const (
-	Public  Visibility = "public"
-	Private Visibility = "private"
-)
