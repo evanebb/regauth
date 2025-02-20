@@ -50,34 +50,7 @@ func GenerateToken(
 			subject = u.Username
 		}
 
-		var requestedAccess auth.Access
-		scopes := r.URL.Query()["scope"]
-		for _, scope := range scopes {
-			var ra auth.ResourceActions
-
-			parts := strings.Split(scope, ":")
-			// FIXME: add regex validation to parts
-			switch len(parts) {
-			case 3:
-				ra = auth.ResourceActions{
-					Type:    parts[0],
-					Name:    parts[1],
-					Actions: strings.Split(parts[2], ","),
-				}
-			case 4:
-				ra = auth.ResourceActions{
-					Type:    parts[0],
-					Name:    parts[1] + ":" + parts[2],
-					Actions: strings.Split(parts[3], ","),
-				}
-			default:
-				// Invalid scope, just skip it
-				continue
-			}
-
-			requestedAccess = append(requestedAccess, ra)
-		}
-
+		requestedAccess := parseScopes(r)
 		grantedAccess, err := authorizer.AuthorizeAccess(r.Context(), p, requestedAccess)
 		if err != nil {
 			l.Error("unknown error occurred during authorization", "error", err)
@@ -126,6 +99,38 @@ func GenerateToken(
 
 		writeJSONResponse(w, resp)
 	})
+}
+
+func parseScopes(r *http.Request) auth.Access {
+	var requestedAccess auth.Access
+	scopes := r.URL.Query()["scope"]
+	for _, scope := range scopes {
+		var ra auth.ResourceActions
+
+		parts := strings.Split(scope, ":")
+		// FIXME: add regex validation to parts
+		switch len(parts) {
+		case 3:
+			ra = auth.ResourceActions{
+				Type:    parts[0],
+				Name:    parts[1],
+				Actions: strings.Split(parts[2], ","),
+			}
+		case 4:
+			ra = auth.ResourceActions{
+				Type:    parts[0],
+				Name:    parts[1] + ":" + parts[2],
+				Actions: strings.Split(parts[3], ","),
+			}
+		default:
+			// Invalid scope, just skip it
+			continue
+		}
+
+		requestedAccess = append(requestedAccess, ra)
+	}
+
+	return requestedAccess
 }
 
 type registryTokenResponse struct {
