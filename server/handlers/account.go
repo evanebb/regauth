@@ -100,7 +100,7 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 			ID:             uuid.New(),
 			Hash:           hash,
 			Description:    r.PostFormValue("description"),
-			PermissionType: pat.PermissionType(r.PostFormValue("permissionType")),
+			Permission:     pat.Permission(r.PostFormValue("permission")),
 			ExpirationDate: exp,
 			UserID:         u.ID,
 		}

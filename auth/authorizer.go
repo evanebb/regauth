@@ -92,7 +92,7 @@ func (a authorizer) authorizeResourceActions(ctx context.Context, p *pat.Persona
 		}
 
 		if p != nil {
-			if !slices.Contains(p.PermissionType.GetAllowedActions(), allowedAction) {
+			if !slices.Contains(p.Permission.GetAllowedActions(), allowedAction) {
 				a.logger.Debug("action not allowed by personal access token permission", "action", allowedAction, "repository", r.Name)
 				continue
 			}

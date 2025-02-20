@@ -10,24 +10,24 @@ type PersonalAccessToken struct {
 	ID             uuid.UUID
 	Hash           []byte
 	Description    string
-	PermissionType PermissionType
+	Permission     Permission
 	ExpirationDate time.Time
 	UserID         uuid.UUID
 }
 
-type PermissionType string
+type Permission string
 
 const (
-	ReadOnly        PermissionType = "readOnly"
-	ReadWrite       PermissionType = "readWrite"
-	ReadWriteDelete PermissionType = "readWriteDelete"
+	PermissionReadOnly        Permission = "readOnly"
+	PermissionReadWrite       Permission = "readWrite"
+	PermissionReadWriteDelete Permission = "readWriteDelete"
 )
 
-func (t PermissionType) GetAllowedActions() []string {
-	m := map[PermissionType][]string{
-		ReadOnly:        {"pull"},
-		ReadWrite:       {"pull", "push"},
-		ReadWriteDelete: {"pull", "push", "delete"},
+func (t Permission) GetAllowedActions() []string {
+	m := map[Permission][]string{
+		PermissionReadOnly:        {"pull"},
+		PermissionReadWrite:       {"pull", "push"},
+		PermissionReadWriteDelete: {"pull", "push", "delete"},
 	}
 
 	a, ok := m[t]
@@ -37,11 +37,11 @@ func (t PermissionType) GetAllowedActions() []string {
 	return a
 }
 
-func (t PermissionType) HumanReadable() string {
-	m := map[PermissionType]string{
-		ReadOnly:        "Read-only",
-		ReadWrite:       "Read and write",
-		ReadWriteDelete: "Read, write and delete",
+func (t Permission) HumanReadable() string {
+	m := map[Permission]string{
+		PermissionReadOnly:        "Read-only",
+		PermissionReadWrite:       "Read and write",
+		PermissionReadWriteDelete: "Read, write and delete",
 	}
 
 	h, ok := m[t]

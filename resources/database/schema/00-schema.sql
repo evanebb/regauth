@@ -40,7 +40,7 @@ CREATE TABLE repositories
     UNIQUE (namespace, name)
 );
 
-CREATE TYPE token_permission_type AS ENUM ('read_only', 'read_write', 'read_write_delete');
+CREATE TYPE token_permission AS ENUM ('read_only', 'read_write', 'read_write_delete');
 
 DROP TABLE IF EXISTS personal_access_tokens;
 CREATE TABLE personal_access_tokens
@@ -49,7 +49,7 @@ CREATE TABLE personal_access_tokens
     uuid            uuid UNIQUE,
     hash            varchar,
     description     varchar(255),
-    permission_type token_permission_type,
+    permission      token_permission,
     expiration_date timestamp,
     user_uuid       uuid REFERENCES users (uuid) ON DELETE CASCADE
 );

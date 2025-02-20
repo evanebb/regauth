@@ -1,5 +1,5 @@
 INSERT INTO
-    personal_access_tokens (uuid, hash, description, permission_type, expiration_date, user_uuid)
+    personal_access_tokens (uuid, hash, description, permission, expiration_date, user_uuid)
 VALUES
     ('4a73fcfe-4eb2-476d-8ce7-42989e7a71c7', '$2y$12$nAbHQ2pWUKgajr.GSoyeVuxHqgTJBHehWE4gNcntBjaUmCW4aAH76', 'Read-only token', 'read_only', '2044-12-31 12:06:30', '965389fb-27ce-4f81-9e59-6ef9cb3b2472'),
     ('2ecbbeb0-1d40-48c3-8647-d846d84ad93c', '$2y$12$31BLUeLKAPzZbGJDsKJ2EOspDJXgmvkdxIzdJByLRYCSInMLW0bLe', 'Read-write token', 'read_write', '2044-12-31 12:06:30', '965389fb-27ce-4f81-9e59-6ef9cb3b2472'),

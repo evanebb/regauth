@@ -20,7 +20,7 @@ func NewPersonalAccessTokenStore(db *pgxpool.Pool) PersonalAccessTokenStore {
 func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid.UUID) ([]pat.PersonalAccessToken, error) {
 	var tokens []pat.PersonalAccessToken
 
-	query := "SELECT uuid, hash, description, permission_type, expiration_date, user_uuid FROM personal_access_tokens WHERE user_uuid = $1"
+	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE user_uuid = $1"
 	rows, err := s.db.Query(ctx, query, userID)
 	if err != nil {
 		return tokens, err
@@ -35,7 +35,7 @@ func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid
 			return tokens, err
 		}
 
-		t.PermissionType = permissionTypeFromDatabaseMap[pt]
+		t.Permission = permissionFromDatabaseMap[pt]
 		tokens = append(tokens, t)
 	}
 
@@ -46,13 +46,13 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (pa
 	var t pat.PersonalAccessToken
 	var pt string
 
-	query := "SELECT uuid, hash, description, permission_type, expiration_date, user_uuid FROM personal_access_tokens WHERE uuid = $1"
+	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE uuid = $1"
 	err := s.db.QueryRow(ctx, query, id).Scan(&t.ID, &t.Hash, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return t, pat.ErrNotFound
 	}
 
-	t.PermissionType = permissionTypeFromDatabaseMap[pt]
+	t.Permission = permissionFromDatabaseMap[pt]
 	return t, err
 }
 
@@ -65,8 +65,8 @@ func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAcce
 		return err
 	}
 
-	query := "INSERT INTO personal_access_tokens (uuid, hash, description, permission_type, expiration_date, user_uuid) VALUES ($1, $2, $3, $4, $5, $6)"
-	_, err = s.db.Exec(ctx, query, t.ID, t.Hash, t.Description, permissionTypeToDatabaseMap[t.PermissionType], t.ExpirationDate, t.UserID)
+	query := "INSERT INTO personal_access_tokens (uuid, hash, description, permission, expiration_date, user_uuid) VALUES ($1, $2, $3, $4, $5, $6)"
+	_, err = s.db.Exec(ctx, query, t.ID, t.Hash, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
 	return err
 }
 
@@ -105,14 +105,14 @@ func (s PersonalAccessTokenStore) AddUsageLogEntry(ctx context.Context, e pat.Us
 	return err
 }
 
-var permissionTypeFromDatabaseMap = map[string]pat.PermissionType{
-	"read_only":         pat.ReadOnly,
-	"read_write":        pat.ReadWrite,
-	"read_write_delete": pat.ReadWriteDelete,
+var permissionFromDatabaseMap = map[string]pat.Permission{
+	"read_only":         pat.PermissionReadOnly,
+	"read_write":        pat.PermissionReadWrite,
+	"read_write_delete": pat.PermissionReadWriteDelete,
 }
 
-var permissionTypeToDatabaseMap = map[pat.PermissionType]string{
-	pat.ReadOnly:        "read_only",
-	pat.ReadWrite:       "read_write",
-	pat.ReadWriteDelete: "read_write_delete",
+var permissionToDatabaseMap = map[pat.Permission]string{
+	pat.PermissionReadOnly:        "read_only",
+	pat.PermissionReadWrite:       "read_write",
+	pat.PermissionReadWriteDelete: "read_write_delete",
 }
