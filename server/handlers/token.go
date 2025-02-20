@@ -47,7 +47,7 @@ func GenerateToken(
 			}
 
 			p = &lp
-			subject = u.Username
+			subject = u.Username.String()
 		}
 
 		requestedAccess := parseScopes(r)
