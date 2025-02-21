@@ -22,13 +22,7 @@ func newServeCommand() *cobra.Command {
 				return err
 			}
 
-			ctx := context.Background()
-			s, err := server.New(ctx, conf)
-			if err != nil {
-				return err
-			}
-
-			return s.ListenAndServe(ctx)
+			return server.Run(context.Background(), conf)
 		},
 	}
 }

@@ -22,27 +22,22 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 )
 
-type Server struct {
-	server *http.Server
-	conf   *configuration.Configuration
-	logger *slog.Logger
-	db     *pgxpool.Pool
-}
-
-func New(ctx context.Context, conf *configuration.Configuration) (*Server, error) {
+func Run(ctx context.Context, conf *configuration.Configuration) error {
 	// Initialize all the dependencies
 	logger, err := buildLogger(conf)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	connString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", conf.Database.User, conf.Database.Password, conf.Database.Host, conf.Database.Port, conf.Database.Name)
 	db, err := pgxpool.New(ctx, connString)
+	defer db.Close()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	repoStore := postgres.NewRepositoryStore(db)
@@ -57,19 +52,19 @@ func New(ctx context.Context, conf *configuration.Configuration) (*Server, error
 	// Global var usage here, fine for now but might need to fix it later
 	templateFS, err := fs.Sub(resources.Embedded, "templates")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	templater := template.NewTemplater(logger, templateFS, sessionStore)
 
 	certificate, err := loadCertificate(conf.Token.Certificate)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	privateKey, err := loadPrivateKey(conf.Token.Key)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	signer, err := jose.NewSigner(
@@ -77,7 +72,7 @@ func New(ctx context.Context, conf *configuration.Configuration) (*Server, error
 		(&jose.SignerOptions{}).WithHeader("x5c", []string{base64.StdEncoding.EncodeToString(certificate.Raw)}),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("could not create signer: %w", err)
+		return fmt.Errorf("could not create signer: %w", err)
 	}
 
 	router := chi.NewRouter()
@@ -88,38 +83,29 @@ func New(ctx context.Context, conf *configuration.Configuration) (*Server, error
 		Handler: router,
 	}
 
-	return &Server{
-		server: server,
-		conf:   conf,
-		logger: logger,
-	}, nil
-}
-
-func (s *Server) ListenAndServe(ctx context.Context) error {
-	defer s.db.Close()
-
-	httpConf := s.conf.HTTP
-
 	go func() {
-		if httpConf.Certificate != "" && httpConf.Key != "" {
-			s.logger.Info(fmt.Sprintf("starting https server on %s", s.server.Addr))
-			if err := s.server.ListenAndServeTLS(httpConf.Certificate, httpConf.Key); err != nil {
-				s.logger.Error("error listening and serving", "error", err)
+		if conf.HTTP.Certificate != "" && conf.HTTP.Key != "" {
+			logger.Info(fmt.Sprintf("starting https server on %s", server.Addr))
+			if err := server.ListenAndServeTLS(conf.HTTP.Certificate, conf.HTTP.Key); !errors.Is(err, http.ErrServerClosed) {
+				logger.Error("error listening and serving", "error", err)
 			}
 		} else {
-			s.logger.Info(fmt.Sprintf("starting http server on %s", s.server.Addr))
-			if err := s.server.ListenAndServe(); err != nil {
-				s.logger.Error("error listening and serving", "error", err)
+			logger.Info(fmt.Sprintf("starting http server on %s", server.Addr))
+			if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+				logger.Error("error listening and serving", "error", err)
 			}
 		}
 	}()
 
-	<-ctx.Done()
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+	<-sig
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := s.server.Shutdown(shutdownCtx); err != nil {
+	logger.Info("shutting down http server")
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("error shutting down http server: %w", err)
 	}
 
