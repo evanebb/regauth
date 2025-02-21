@@ -22,7 +22,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"sync"
+	"time"
 )
 
 type Server struct {
@@ -102,34 +102,27 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 
 	go func() {
 		if httpConf.Certificate != "" && httpConf.Key != "" {
-			s.logger.Info(fmt.Sprintf("listening on %s (HTTPS enabled)", s.server.Addr))
+			s.logger.Info(fmt.Sprintf("starting https server on %s", s.server.Addr))
 			if err := s.server.ListenAndServeTLS(httpConf.Certificate, httpConf.Key); err != nil {
 				s.logger.Error("error listening and serving", "error", err)
 			}
 		} else {
-			s.logger.Info(fmt.Sprintf("listening on %s", s.server.Addr))
+			s.logger.Info(fmt.Sprintf("starting http server on %s", s.server.Addr))
 			if err := s.server.ListenAndServe(); err != nil {
 				s.logger.Error("error listening and serving", "error", err)
 			}
 		}
 	}()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	<-ctx.Done()
 
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-		shutdownCtx := context.Background()
-		shutdownCtx, cancel := context.WithTimeout(shutdownCtx, 10)
-		defer cancel()
-		if err := s.server.Shutdown(shutdownCtx); err != nil {
-			s.logger.Error("error shutting down http server", "error", err)
-		}
-	}()
+	if err := s.server.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("error shutting down http server: %w", err)
+	}
 
-	wg.Wait()
 	return nil
 }
 
