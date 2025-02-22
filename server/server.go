@@ -10,15 +10,17 @@ import (
 	"fmt"
 	"github.com/evanebb/regauth/auth"
 	"github.com/evanebb/regauth/configuration"
-	"github.com/evanebb/regauth/resources"
+	"github.com/evanebb/regauth/resources/database"
+	"github.com/evanebb/regauth/resources/templates"
 	"github.com/evanebb/regauth/session"
 	"github.com/evanebb/regauth/store/postgres"
 	"github.com/evanebb/regauth/template"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 	"io"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -40,6 +42,19 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 		return err
 	}
 
+	goose.SetBaseFS(database.Files)
+	err = goose.SetDialect("postgres")
+	if err != nil {
+		return err
+	}
+
+	stdlibDb := stdlib.OpenDBFromPool(db)
+	defer stdlibDb.Close()
+	err = goose.Up(stdlibDb, "migrations")
+	if err != nil {
+		return err
+	}
+
 	repoStore := postgres.NewRepositoryStore(db)
 	patStore := postgres.NewPersonalAccessTokenStore(db)
 	userStore := postgres.NewUserStore(db)
@@ -49,13 +64,7 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	authenticator := auth.NewAuthenticator(patStore, userStore)
 	authorizer := auth.NewAuthorizer(logger, repoStore)
 
-	// Global var usage here, fine for now but might need to fix it later
-	templateFS, err := fs.Sub(resources.Embedded, "templates")
-	if err != nil {
-		return err
-	}
-
-	templater := template.NewTemplater(logger, templateFS, sessionStore)
+	templater := template.NewTemplater(logger, templates.Files, sessionStore)
 
 	certificate, err := loadCertificate(conf.Token.Certificate)
 	if err != nil {
