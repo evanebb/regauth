@@ -10,7 +10,6 @@ import (
 
 type PersonalAccessToken struct {
 	ID             uuid.UUID
-	Hash           []byte
 	Description    Description
 	Permission     Permission
 	ExpirationDate time.Time

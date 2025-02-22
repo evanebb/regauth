@@ -48,6 +48,7 @@ CREATE TABLE personal_access_tokens
     id              serial PRIMARY KEY,
     uuid            uuid UNIQUE,
     hash            varchar,
+    last_eight      varchar(8),
     description     varchar(255),
     permission      token_permission,
     expiration_date timestamp,

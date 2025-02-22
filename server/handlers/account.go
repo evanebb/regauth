@@ -88,17 +88,9 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 		randBytes := make([]byte, 42)
 		_, _ = rand.Read(randBytes)
 		plainTextToken := "registry_pat_" + base64.URLEncoding.EncodeToString(randBytes)
-		hash, err := bcrypt.GenerateFromPassword([]byte(plainTextToken), bcrypt.DefaultCost)
-		if err != nil {
-			l.Error("failed to hash token", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
 
 		token := pat.PersonalAccessToken{
 			ID:             uuid.New(),
-			Hash:           hash,
 			Description:    pat.Description(r.PostFormValue("description")),
 			Permission:     pat.Permission(r.PostFormValue("permission")),
 			ExpirationDate: exp,
@@ -113,7 +105,7 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 			return
 		}
 
-		err = patStore.Create(r.Context(), token)
+		err = patStore.Create(r.Context(), token, plainTextToken)
 		if err != nil {
 			l.Error("failed to create token", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)

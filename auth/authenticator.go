@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/evanebb/regauth/pat"
 	"github.com/evanebb/regauth/user"
-	"golang.org/x/crypto/bcrypt"
 	"net"
 	"strings"
 	"time"
@@ -37,40 +36,30 @@ func (a authenticator) Authenticate(ctx context.Context, username, password stri
 		return p, u, errors.Join(ErrAuthenticationFailed, errors.New("invalid personal access token given"))
 	}
 
-	p, err = a.checkTokenAgainstUserTokens(ctx, u, password)
-	if err == nil {
-		logEntry := pat.UsageLogEntry{
-			TokenID:   p.ID,
-			SourceIP:  sourceIP,
-			Timestamp: time.Now(),
-		}
-
-		err = a.patStore.AddUsageLogEntry(ctx, logEntry)
-	}
-
-	return p, u, err
-}
-
-func (a authenticator) checkTokenAgainstUserTokens(ctx context.Context, u user.User, token string) (pat.PersonalAccessToken, error) {
-	var p pat.PersonalAccessToken
-
-	userTokens, err := a.patStore.GetAllForUser(ctx, u.ID)
+	p, err = a.patStore.GetByPlainTextToken(ctx, password)
 	if err != nil {
-		return p, errors.Join(ErrAuthenticationFailed, err)
-	}
-
-	now := time.Now()
-	for _, userToken := range userTokens {
-		if userToken.ExpirationDate.Before(now) {
-			continue
+		if errors.Is(err, pat.ErrNotFound) {
+			err = errors.Join(ErrAuthenticationFailed, err)
 		}
 
-		if err := bcrypt.CompareHashAndPassword(userToken.Hash, []byte(token)); err != nil {
-			continue
-		}
-
-		return userToken, nil
+		return p, u, err
 	}
 
-	return p, errors.Join(ErrAuthenticationFailed, errors.New("no matching personal access token found"))
+	if p.UserID != u.ID {
+		return p, u, errors.Join(ErrAuthenticationFailed, errors.New("token does not belong to user"))
+	}
+
+	if p.ExpirationDate.Before(time.Now()) {
+		return p, u, errors.Join(ErrAuthenticationFailed, errors.New("token has expired"))
+	}
+
+	// Log that the token was used
+	logEntry := pat.UsageLogEntry{
+		TokenID:   p.ID,
+		SourceIP:  sourceIP,
+		Timestamp: time.Now(),
+	}
+
+	err = a.patStore.AddUsageLogEntry(ctx, logEntry)
+	return p, u, err
 }

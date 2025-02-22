@@ -3,10 +3,12 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/evanebb/regauth/pat"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type PersonalAccessTokenStore struct {
@@ -20,7 +22,7 @@ func NewPersonalAccessTokenStore(db *pgxpool.Pool) PersonalAccessTokenStore {
 func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid.UUID) ([]pat.PersonalAccessToken, error) {
 	var tokens []pat.PersonalAccessToken
 
-	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE user_uuid = $1"
+	query := "SELECT uuid, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE user_uuid = $1"
 	rows, err := s.db.Query(ctx, query, userID)
 	if err != nil {
 		return tokens, err
@@ -30,7 +32,7 @@ func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid
 		var t pat.PersonalAccessToken
 		var pt string
 
-		err = rows.Scan(&t.ID, &t.Hash, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
+		err = rows.Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
 		if err != nil {
 			return tokens, err
 		}
@@ -52,8 +54,8 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (pa
 	var t pat.PersonalAccessToken
 	var pt string
 
-	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE uuid = $1"
-	err := s.db.QueryRow(ctx, query, id).Scan(&t.ID, &t.Hash, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
+	query := "SELECT uuid, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE uuid = $1"
+	err := s.db.QueryRow(ctx, query, id).Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return t, pat.ErrNotFound
@@ -66,7 +68,43 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (pa
 	return t, t.IsValid()
 }
 
-func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAccessToken) error {
+func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plainTextToken string) (pat.PersonalAccessToken, error) {
+	// Select all tokens of which the stored last eight characters match the plain-text token
+	lastEight := plainTextToken[len(plainTextToken)-8]
+	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE last_eight = $1"
+	rows, err := s.db.Query(ctx, query, lastEight)
+	if err != nil {
+		return pat.PersonalAccessToken{}, err
+	}
+
+	for rows.Next() {
+		var t pat.PersonalAccessToken
+		var pt string
+		var hash []byte
+
+		err = rows.Scan(&t.ID, &hash, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
+		if err != nil {
+			continue
+		}
+
+		t.Permission = permissionFromDatabaseMap[pt]
+
+		err = t.IsValid()
+		if err != nil {
+			continue
+		}
+
+		// Verify whether the hash actually matches
+		err = bcrypt.CompareHashAndPassword(hash, []byte(plainTextToken))
+		if err == nil {
+			return t, nil
+		}
+	}
+
+	return pat.PersonalAccessToken{}, pat.ErrNotFound
+}
+
+func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAccessToken, plainTextToken string) error {
 	_, err := s.GetByID(ctx, t.ID)
 	if err == nil {
 		return pat.ErrAlreadyExists
@@ -75,8 +113,14 @@ func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAcce
 		return err
 	}
 
-	query := "INSERT INTO personal_access_tokens (uuid, hash, description, permission, expiration_date, user_uuid) VALUES ($1, $2, $3, $4, $5, $6)"
-	_, err = s.db.Exec(ctx, query, t.ID, t.Hash, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
+	lastEight := plainTextToken[len(plainTextToken)-8]
+	hash, err := bcrypt.GenerateFromPassword([]byte(plainTextToken), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash token: %w", err)
+	}
+
+	query := "INSERT INTO personal_access_tokens (uuid, hash, last_eight ,description, permission, expiration_date, user_uuid) VALUES ($1, $2, $3, $4, $5, $6, $7)"
+	_, err = s.db.Exec(ctx, query, t.ID, hash, lastEight, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
 	return err
 }
 
