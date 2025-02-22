@@ -20,7 +20,7 @@ jobs:
           go-version: '1.23'
 
       - name: Build
-        run: go build -tags viper_bind_struct -v ./cmd/regauth
+        run: go build -tags viper_bind_struct ./cmd/regauth
         env:
           CGO_ENABLED: 0
 
