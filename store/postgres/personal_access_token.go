@@ -71,7 +71,7 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (pa
 
 func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plainTextToken string) (pat.PersonalAccessToken, error) {
 	// Select all tokens of which the stored last eight characters match the plain-text token
-	lastEight := plainTextToken[len(plainTextToken)-8]
+	lastEight := plainTextToken[len(plainTextToken)-8:]
 	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE last_eight = $1"
 	rows, err := s.db.Query(ctx, query, lastEight)
 	defer rows.Close()
@@ -115,8 +115,8 @@ func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAcce
 		return err
 	}
 
-	lastEight := plainTextToken[len(plainTextToken)-8]
-	hash, err := bcrypt.GenerateFromPassword([]byte(plainTextToken), bcrypt.DefaultCost)
+	lastEight := plainTextToken[len(plainTextToken)-8:]
+	hash, err := bcrypt.GenerateFromPassword([]byte(plainTextToken), 12)
 	if err != nil {
 		return fmt.Errorf("failed to hash token: %w", err)
 	}
