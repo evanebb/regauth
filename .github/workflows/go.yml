@@ -21,6 +21,8 @@ jobs:
 
       - name: Build
         run: go build -tags viper_bind_struct -v ./cmd/regauth
+        env:
+          CGO_ENABLED: 0
 
 #      - name: Test
 #        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
