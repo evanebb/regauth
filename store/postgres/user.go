@@ -22,6 +22,7 @@ func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 
 	query := "SELECT uuid, username, firstname, lastname, role FROM users"
 	rows, err := s.db.Query(ctx, query)
+	defer rows.Close()
 	if err != nil {
 		return users, err
 	}

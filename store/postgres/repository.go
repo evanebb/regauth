@@ -22,6 +22,7 @@ func (s RepositoryStore) GetAllByOwner(ctx context.Context, ownerId uuid.UUID) (
 
 	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE owner_uuid = $1"
 	rows, err := s.db.Query(ctx, query, ownerId)
+	defer rows.Close()
 	if err != nil {
 		return repositories, err
 	}
@@ -50,6 +51,7 @@ func (s RepositoryStore) GetAllPublic(ctx context.Context) ([]repository.Reposit
 
 	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE visibility = 'public'"
 	rows, err := s.db.Query(ctx, query)
+	defer rows.Close()
 	if err != nil {
 		return repositories, err
 	}

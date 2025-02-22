@@ -24,6 +24,7 @@ func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid
 
 	query := "SELECT uuid, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE user_uuid = $1"
 	rows, err := s.db.Query(ctx, query, userID)
+	defer rows.Close()
 	if err != nil {
 		return tokens, err
 	}
@@ -73,6 +74,7 @@ func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plain
 	lastEight := plainTextToken[len(plainTextToken)-8]
 	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE last_eight = $1"
 	rows, err := s.db.Query(ctx, query, lastEight)
+	defer rows.Close()
 	if err != nil {
 		return pat.PersonalAccessToken{}, err
 	}
@@ -135,6 +137,7 @@ func (s PersonalAccessTokenStore) GetUsageLog(ctx context.Context, tokenID uuid.
 
 	query := "SELECT token_uuid, source_ip, timestamp FROM personal_access_tokens_usage_log WHERE token_uuid = $1 ORDER BY timestamp DESC"
 	rows, err := s.db.Query(ctx, query, tokenID)
+	defer rows.Close()
 	if err != nil {
 		return log, err
 	}
