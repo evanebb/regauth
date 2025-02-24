@@ -15,7 +15,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8000:8000"
     read_only: true
     volumes:
       - ./keys/cert.pem:/etc/regauth/cert.pem:ro

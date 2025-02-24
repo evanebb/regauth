@@ -3,7 +3,6 @@ log:
   format: text
 
 http:
-  addr: :8080
   # This should be set to a secure, randomly generated value in production!
   sessionKey: thisisaverysecretkey
 
