@@ -3,7 +3,7 @@ log:
   # 'debug', 'info', 'warn' or 'error'. Defaults to 'info'
   level: info
   # 'text' or 'json'. Defaults to 'text'
-  format: text
+  formatter: text
 
 # HTTP server configuration
 http:
