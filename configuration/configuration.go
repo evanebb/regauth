@@ -18,7 +18,7 @@ type Configuration struct {
 func SetDefaults(v *viper.Viper) {
 	v.SetDefault("log.level", "info")
 	v.SetDefault("log.formatter", "text")
-	v.SetDefault("addr", ":8000")
+	v.SetDefault("http.addr", ":8000")
 	v.SetDefault("database.port", 5432)
 	v.SetDefault("auth.local.enabled", true)
 }
