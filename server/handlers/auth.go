@@ -94,9 +94,16 @@ func RequireRole(role user.Role) func(next http.Handler) http.Handler {
 
 func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		if err != nil {
-			http.Error(w, err.Error(), 400)
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
+		if err := r.ParseForm(); err != nil {
+			s.AddFlash(session.NewFlash(session.FlashTypeError, "Bad request, please try again"))
+			http.Redirect(w, r, "/ui/login", http.StatusFound)
 			return
 		}
 
@@ -105,12 +112,16 @@ func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Sto
 
 		authUser, err := authUserStore.GetByUsername(r.Context(), username)
 		if err != nil {
+			var f session.Flash
 			if errors.Is(err, local.ErrUserNotFound) {
 				l.Info("authentication failed: user does not exist", "username", username)
+				f = session.NewFlash(session.FlashTypeWarning, "Invalid username or password.")
 			} else {
 				l.Error("authentication failed: failed to get auth user", "error", err, "username", username)
+				f = session.NewFlash(session.FlashTypeError, "Unknown error occurred.")
 			}
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
+			s.AddFlash(f)
+			http.Redirect(w, r, "/ui/login", http.StatusFound)
 			return
 		}
 
@@ -118,27 +129,21 @@ func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Sto
 		u, err := userStore.GetByUsername(r.Context(), username)
 		if err != nil {
 			l.Error("authentication failed: failed to get user", "error", err, "username", username)
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
+			s.AddFlash(session.NewFlash(session.FlashTypeError, "Unknown error occurred."))
+			http.Redirect(w, r, "/ui/login", http.StatusFound)
 			return
 		}
 
-		err = bcrypt.CompareHashAndPassword(authUser.PasswordHash, []byte(password))
-		if err != nil {
+		if err := bcrypt.CompareHashAndPassword(authUser.PasswordHash, []byte(password)); err != nil {
 			l.Info("authentication failed: password does not match", "username", username)
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
+			s.AddFlash(session.NewFlash(session.FlashTypeWarning, "Invalid username or password."))
+			http.Redirect(w, r, "/ui/login", http.StatusFound)
 			return
 		}
 
-		s, _ := sessionStore.Get(r, "session")
 		s.Values[userIdSessionKey] = u.ID.String()
 		if u.Username == "admin" {
 			s.AddFlash(session.NewFlash(session.FlashTypeWarning, "You are using the initial admin account. You should create a different admin account and delete this one."))
-		}
-		err = s.Save(r, w)
-		if err != nil {
-			l.Error("authentication failed: failed to save session", "error", err, "username", username)
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
-			return
 		}
 
 		l.Info("successfully logged in user", "username", username)
