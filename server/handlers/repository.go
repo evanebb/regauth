@@ -16,6 +16,8 @@ import (
 
 type repositoryCtxKey struct{}
 
+// RepositoryParser is a middleware that will look up the requested repository in the path, check if it belongs to the user
+// and sets it in the request context.
 func RepositoryParser(l *slog.Logger, t template.Templater, repoStore repository.Store) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
@@ -57,27 +59,25 @@ func RepositoryParser(l *slog.Logger, t template.Templater, repoStore repository
 				return
 			}
 
-			r = r.WithContext(context.WithValue(r.Context(), repositoryCtxKey{}, repo))
+			ctx := withRepository(r.Context(), repo)
+			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(fn)
 	}
 }
 
-// getRepositoryFromRequestContext parses the current repository.Repository from the given request context.
+// withRepository sets the given user.User in the context.
+// Use repositoryFromContext to retrieve the repository.
+func withRepository(ctx context.Context, r repository.Repository) context.Context {
+	return context.WithValue(ctx, repositoryCtxKey{}, r)
+}
+
+// repositoryFromContext parses the current repository.Repository from the given request context.
 // This requires the user to have been previously set in the context, for example by RepositoryParser.
-func getRepositoryFromRequestContext(ctx context.Context) (repository.Repository, error) {
-	val := ctx.Value(repositoryCtxKey{})
-	if val == nil {
-		return repository.Repository{}, errors.New("no repository set in request context")
-	}
-
-	u, ok := val.(repository.Repository)
-	if !ok {
-		return repository.Repository{}, errors.New("repository set in request context is not valid")
-	}
-
-	return u, nil
+func repositoryFromContext(ctx context.Context) (repository.Repository, bool) {
+	val, ok := ctx.Value(repositoryCtxKey{}).(repository.Repository)
+	return val, ok
 }
 
 func Explore(l *slog.Logger, t template.Templater, s repository.Store) http.HandlerFunc {
@@ -205,9 +205,9 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 
 func ViewRepository(l *slog.Logger, t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo, err := getRepositoryFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("could not get repository from request context", "error", err)
+		repo, ok := repositoryFromContext(r.Context())
+		if !ok {
+			l.Error("no repository in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -219,15 +219,15 @@ func ViewRepository(l *slog.Logger, t template.Templater) http.HandlerFunc {
 
 func DeleteRepository(l *slog.Logger, t template.Templater, repoStore repository.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo, err := getRepositoryFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("could not get repository from request context", "error", err)
+		repo, ok := repositoryFromContext(r.Context())
+		if !ok {
+			l.Error("no repository in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
 
-		err = repoStore.DeleteByID(r.Context(), repo.ID)
+		err := repoStore.DeleteByID(r.Context(), repo.ID)
 		if err != nil {
 			l.Error("failed to delete repository", "error", err, "repositoryId", repo.ID)
 			w.WriteHeader(http.StatusInternalServerError)
