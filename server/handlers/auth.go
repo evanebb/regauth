@@ -154,13 +154,13 @@ func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Sto
 func Logout(l *slog.Logger, store sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s, _ := store.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
 		delete(s.Values, userIdSessionKey)
-		err := s.Save(r, w)
-		if err != nil {
-			l.Error("failed to log out", "error", err)
-			http.Error(w, "logout failed", http.StatusInternalServerError)
-			return
-		}
 		http.Redirect(w, r, "/ui", http.StatusFound)
 	}
 }
