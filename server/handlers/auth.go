@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"github.com/evanebb/regauth/auth/local"
 	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/session"
@@ -27,27 +29,9 @@ func UserSessionParser(sessionStore sessions.Store, userStore user.Store) func(n
 				return
 			}
 
-			raw, ok := val.(string)
-			if !ok {
-				// User ID isn't a string, no idea how we got here, just remove it from the s and have them log in again
-				delete(s.Values, userIdSessionKey)
-				_ = s.Save(r, w)
-				http.Redirect(w, r, "/ui/login", http.StatusFound)
-				return
-			}
-
-			id, err := uuid.Parse(raw)
+			u, err := getUserByRawID(r.Context(), val, userStore)
 			if err != nil {
-				// User ID is not a valid UUID, no idea how we got here, just remove it from the s and have them log in again
-				delete(s.Values, userIdSessionKey)
-				_ = s.Save(r, w)
-				http.Redirect(w, r, "/ui/login", http.StatusFound)
-				return
-			}
-
-			u, err := userStore.GetByID(r.Context(), id)
-			if err != nil {
-				// User does not exist, remove the ID from the s so the user has to re-authenticate
+				// If we can't get a user using the supplied ID for some reason, remove it from the session so they have to re-authenticate
 				delete(s.Values, userIdSessionKey)
 				_ = s.Save(r, w)
 				http.Redirect(w, r, "/ui/login", http.StatusFound)
@@ -60,6 +44,25 @@ func UserSessionParser(sessionStore sessions.Store, userStore user.Store) func(n
 		}
 		return http.HandlerFunc(fn)
 	}
+}
+
+func getUserByRawID(ctx context.Context, v interface{}, userStore user.Store) (user.User, error) {
+	raw, ok := v.(string)
+	if !ok {
+		return user.User{}, errors.New("raw ID is not a string")
+	}
+
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		return user.User{}, fmt.Errorf("raw ID is not a valid UUID: %w", err)
+	}
+
+	u, err := userStore.GetByID(ctx, id)
+	if err != nil {
+		return user.User{}, fmt.Errorf("could not get user: %w", err)
+	}
+
+	return u, nil
 }
 
 func UserAuth(next http.Handler) http.Handler {
