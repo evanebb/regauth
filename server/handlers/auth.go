@@ -14,40 +14,42 @@ import (
 	"net/http"
 )
 
+const userIdSessionKey = "userId"
+
 func UserSessionParser(sessionStore sessions.Store, userStore user.Store) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			session, _ := sessionStore.Get(r, "session")
-			val, ok := session.Values["userId"]
+			s, _ := sessionStore.Get(r, "session")
+			val, ok := s.Values[userIdSessionKey]
 			if !ok {
-				// If no user is found, do not attach it to the context
+				// If no user is found, do not attach it to the context and continue serving the request
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			raw, ok := val.(string)
 			if !ok {
-				// User ID isn't a string, no idea how we got here, just remove it from the session
-				delete(session.Values, "userId")
-				_ = session.Save(r, w)
+				// User ID isn't a string, no idea how we got here, just remove it from the s and have them log in again
+				delete(s.Values, userIdSessionKey)
+				_ = s.Save(r, w)
 				http.Redirect(w, r, "/ui/login", http.StatusFound)
 				return
 			}
 
 			id, err := uuid.Parse(raw)
 			if err != nil {
-				// User ID is not a valid UUID, no idea how we got here, just remove it from the session
-				delete(session.Values, "userId")
-				_ = session.Save(r, w)
+				// User ID is not a valid UUID, no idea how we got here, just remove it from the s and have them log in again
+				delete(s.Values, userIdSessionKey)
+				_ = s.Save(r, w)
 				http.Redirect(w, r, "/ui/login", http.StatusFound)
 				return
 			}
 
 			u, err := userStore.GetByID(r.Context(), id)
 			if err != nil {
-				// User does not exist, remove the ID from the session so the user has to re-authenticate
-				delete(session.Values, "userId")
-				_ = session.Save(r, w)
+				// User does not exist, remove the ID from the s so the user has to re-authenticate
+				delete(s.Values, userIdSessionKey)
+				_ = s.Save(r, w)
 				http.Redirect(w, r, "/ui/login", http.StatusFound)
 				return
 			}
@@ -125,7 +127,7 @@ func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Sto
 		}
 
 		s, _ := sessionStore.Get(r, "session")
-		s.Values["userId"] = u.ID.String()
+		s.Values[userIdSessionKey] = u.ID.String()
 		if u.Username == "admin" {
 			s.AddFlash(session.NewFlash(session.FlashTypeWarning, "You are using the initial admin account. You should create a different admin account and delete this one."))
 		}
@@ -141,11 +143,11 @@ func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Sto
 	}
 }
 
-func Logout(l *slog.Logger, s sessions.Store) http.HandlerFunc {
+func Logout(l *slog.Logger, store sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		session, _ := s.Get(r, "session")
-		delete(session.Values, "userId")
-		err := session.Save(r, w)
+		s, _ := store.Get(r, "session")
+		delete(s.Values, userIdSessionKey)
+		err := s.Save(r, w)
 		if err != nil {
 			l.Error("failed to log out", "error", err)
 			http.Error(w, "logout failed", http.StatusInternalServerError)

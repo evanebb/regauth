@@ -52,9 +52,9 @@ func (d Description) IsValid() error {
 type Permission string
 
 const (
-	PermissionReadOnly        Permission = "readOnly"
-	PermissionReadWrite       Permission = "readWrite"
-	PermissionReadWriteDelete Permission = "readWriteDelete"
+	PermissionReadOnly        = Permission("readOnly")
+	PermissionReadWrite       = Permission("readWrite")
+	PermissionReadWriteDelete = Permission("readWriteDelete")
 )
 
 func (p Permission) IsValid() error {

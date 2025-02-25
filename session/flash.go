@@ -13,10 +13,10 @@ func NewFlash(t FlashType, m string) Flash {
 
 type FlashType string
 
-var (
-	FlashTypeSuccess FlashType = "success"
-	FlashTypeWarning FlashType = "warning"
-	FlashTypeError   FlashType = "error"
+const (
+	FlashTypeSuccess = FlashType("success")
+	FlashTypeWarning = FlashType("warning")
+	FlashTypeError   = FlashType("error")
 )
 
 func init() {
