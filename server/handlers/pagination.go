@@ -5,8 +5,8 @@ import (
 	"strconv"
 )
 
-type Pagination[D ~[]E, E any] struct {
-	Data      D
+type Pagination[D any] struct {
+	Data      []D
 	Total     int
 	Page      int
 	PrevPage  int
@@ -20,9 +20,9 @@ type Pagination[D ~[]E, E any] struct {
 	HasNext   bool
 }
 
-func PaginateRequest[D ~[]E, E any](r *http.Request, data D, defaultPageSize int) Pagination[D, E] {
+func PaginateRequest[D any](r *http.Request, data []D, defaultPageSize int) Pagination[D] {
 	// This is gross, don't look here, I am not a front-end developer :D
-	p := Pagination[D, E]{}
+	p := Pagination[D]{}
 	p.Total = len(data)
 
 	p.Page = getIntOrDefault(r.URL.Query().Get("page"), 1)

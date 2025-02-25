@@ -179,7 +179,7 @@ func ViewToken(l *slog.Logger, t template.Templater, patStore pat.Store) http.Ha
 
 		data := struct {
 			Token    pat.PersonalAccessToken
-			UsageLog Pagination[[]pat.UsageLogEntry, pat.UsageLogEntry]
+			UsageLog Pagination[pat.UsageLogEntry]
 		}{
 			Token:    token,
 			UsageLog: paginated,
