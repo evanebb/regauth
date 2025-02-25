@@ -19,8 +19,10 @@ func NewPgxStore(db *pgxpool.Pool, keyPairs ...[]byte) *PgxStore {
 	store := &PgxStore{
 		Codecs: securecookie.CodecsFromPairs(keyPairs...),
 		Options: &sessions.Options{
-			Path:   "/",
-			MaxAge: 86400 * 30,
+			HttpOnly: true,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+			MaxAge:   86400 * 30,
 		},
 		db: db,
 	}
