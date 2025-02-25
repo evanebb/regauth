@@ -26,7 +26,7 @@ func PersonalAccessTokenParser(l *slog.Logger, t template.Templater, patStore pa
 			u, ok := httputil.LoggedInUserFromContext(r.Context())
 			if !ok {
 				l.Error("no user in request context")
-				w.WriteHeader(500)
+				w.WriteHeader(http.StatusInternalServerError)
 				t.RenderBase(w, r, nil, "errors/500.gohtml")
 				return
 			}
@@ -114,7 +114,7 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}

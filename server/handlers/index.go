@@ -7,7 +7,6 @@ import (
 
 func Index(t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
 		t.RenderBase(w, r, nil, "home.gohtml")
 	}
 }

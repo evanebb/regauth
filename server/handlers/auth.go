@@ -173,7 +173,6 @@ func LoginPage(t template.Templater) http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(200)
 		t.RenderBase(w, r, nil, "login.gohtml")
 	}
 }

@@ -72,7 +72,7 @@ func UserOverview(l *slog.Logger, t template.Templater, userStore user.Store) ht
 		users, err := userStore.GetAll(r.Context())
 		if err != nil {
 			l.Error("failed to get users", "error", err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 			return
 		}

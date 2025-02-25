@@ -24,7 +24,7 @@ func RepositoryParser(l *slog.Logger, t template.Templater, repoStore repository
 			u, ok := httputil.LoggedInUserFromContext(r.Context())
 			if !ok {
 				l.Error("no user in request context")
-				w.WriteHeader(500)
+				w.WriteHeader(http.StatusInternalServerError)
 				t.RenderBase(w, r, nil, "errors/500.gohtml")
 				return
 			}
@@ -85,14 +85,13 @@ func Explore(l *slog.Logger, t template.Templater, s repository.Store) http.Hand
 		repositories, err := s.GetAllPublic(r.Context())
 		if err != nil {
 			l.Error("failed to get public repositories", "error", err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 		}
 
 		repositories = filterRepositoriesByName(repositories, r.URL.Query().Get("q"))
 		paginated := PaginateRequest(r, repositories, 10)
 
-		w.WriteHeader(200)
 		if shouldRenderPartials(r) {
 			t.Render(w, r, paginated, "partial", "explore.partial.gohtml")
 		} else {
@@ -106,7 +105,7 @@ func UserRepositoryOverview(l *slog.Logger, t template.Templater, s repository.S
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -114,7 +113,7 @@ func UserRepositoryOverview(l *slog.Logger, t template.Templater, s repository.S
 		repositories, err := s.GetAllByOwner(r.Context(), u.ID)
 		if err != nil {
 			l.Error("failed to get repositories for user", "error", err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -151,7 +150,7 @@ func CreateRepositoryPage(l *slog.Logger, t template.Templater) http.HandlerFunc
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 		}
 
@@ -170,7 +169,7 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
