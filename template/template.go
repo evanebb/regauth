@@ -31,7 +31,7 @@ func (t Templater) renderErr(w http.ResponseWriter, r *http.Request, data any, t
 	}
 
 	var uPtr *user.User
-	u, ok := httputil.UserFromContext(r.Context())
+	u, ok := httputil.LoggedInUserFromContext(r.Context())
 	if ok {
 		uPtr = &u
 	}

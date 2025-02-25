@@ -52,7 +52,7 @@ func UserSessionParser(sessionStore sessions.Store, userStore user.Store) func(n
 				return
 			}
 
-			ctx := httputil.WithUser(r.Context(), u)
+			ctx := httputil.WithLoggedInUser(r.Context(), u)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		}
@@ -62,7 +62,7 @@ func UserSessionParser(sessionStore sessions.Store, userStore user.Store) func(n
 
 func UserAuth(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := httputil.UserFromContext(r.Context()); !ok {
+		if _, ok := httputil.LoggedInUserFromContext(r.Context()); !ok {
 			http.Redirect(w, r, "/ui/login", http.StatusFound)
 			return
 		}
@@ -75,7 +75,7 @@ func UserAuth(next http.Handler) http.Handler {
 func RequireRole(role user.Role) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			u, ok := httputil.UserFromContext(r.Context())
+			u, ok := httputil.LoggedInUserFromContext(r.Context())
 			if !ok || u.Role != role {
 				http.Redirect(w, r, "/ui", http.StatusFound)
 				return
@@ -157,7 +157,7 @@ func Logout(l *slog.Logger, s sessions.Store) http.HandlerFunc {
 
 func LoginPage(t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, ok := httputil.UserFromContext(r.Context())
+		_, ok := httputil.LoggedInUserFromContext(r.Context())
 		if ok {
 			http.Redirect(w, r, "/ui", http.StatusFound)
 			return

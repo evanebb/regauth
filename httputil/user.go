@@ -5,17 +5,17 @@ import (
 	"github.com/evanebb/regauth/user"
 )
 
-type userCtxKey struct{}
+type currentUserCtxKey struct{}
 
-// WithUser sets the given user.User in the context.
-// Use UserFromContext to retrieve the user.
-func WithUser(ctx context.Context, u user.User) context.Context {
-	return context.WithValue(ctx, userCtxKey{}, u)
+// WithLoggedInUser sets the currently logged-in user in the given context.
+// Use LoggedInUserFromContext to retrieve the currently logged-in user.
+func WithLoggedInUser(ctx context.Context, u user.User) context.Context {
+	return context.WithValue(ctx, currentUserCtxKey{}, u)
 }
 
-// UserFromContext parses the current user.User from the given request context.
-// This requires the user to have been previously set in the context by WithUser.
-func UserFromContext(ctx context.Context) (user.User, bool) {
-	u, ok := ctx.Value(userCtxKey{}).(user.User)
+// LoggedInUserFromContext parses the currently logged-in user from the given request context.
+// This requires the user to have been previously set in the context by WithLoggedInUser.
+func LoggedInUserFromContext(ctx context.Context) (user.User, bool) {
+	u, ok := ctx.Value(currentUserCtxKey{}).(user.User)
 	return u, ok
 }

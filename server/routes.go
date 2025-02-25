@@ -60,17 +60,23 @@ func addRoutes(
 					r.Get("/", handlers.TokenOverview(logger, templater, patStore))
 					r.Get("/create", handlers.CreateTokenPage(templater))
 					r.Post("/", handlers.CreateToken(logger, templater, patStore, registryHost))
-					r.Get("/{id}", handlers.ViewToken(logger, templater, patStore))
-					r.Delete("/{id}", handlers.DeleteToken(logger, templater, patStore, sessionStore))
+					r.Route("/{id}", func(r chi.Router) {
+						r.Use(handlers.PersonalAccessTokenParser(logger, templater, patStore))
+						r.Get("/", handlers.ViewToken(logger, templater, patStore))
+						r.Delete("/", handlers.DeleteToken(logger, templater, patStore, sessionStore))
+					})
 				})
 				r.Route("/users", func(r chi.Router) {
 					r.Use(handlers.RequireRole(user.RoleAdmin))
 					r.Get("/", handlers.UserOverview(logger, templater, userStore))
 					r.Get("/create", handlers.CreateUserPage(templater))
 					r.Post("/", handlers.CreateUser(logger, templater, userStore, authUserStore))
-					r.Get("/{id}", handlers.ViewUser(logger, templater, userStore))
-					r.Delete("/{id}", handlers.DeleteUser(logger, templater, userStore, authUserStore, sessionStore))
-					r.Post("/{id}/reset-password", handlers.ResetUserPassword(logger, templater, authUserStore, sessionStore))
+					r.Route("/{id}", func(r chi.Router) {
+						r.Use(handlers.UserParser(logger, templater, userStore))
+						r.Get("/", handlers.ViewUser(logger, templater, userStore))
+						r.Delete("/", handlers.DeleteUser(logger, templater, userStore, authUserStore, sessionStore))
+						r.Post("/reset-password", handlers.ResetUserPassword(logger, templater, authUserStore, sessionStore))
+					})
 				})
 			})
 
