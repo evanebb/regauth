@@ -257,19 +257,6 @@ func DeleteToken(l *slog.Logger, t template.Templater, patStore pat.Store, sessi
 
 func UserOverview(l *slog.Logger, t template.Templater, userStore user.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := httputil.UserFromContext(r.Context())
-		if !ok {
-			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		if u.Role != user.RoleAdmin {
-			http.Redirect(w, r, "/ui", http.StatusFound)
-			return
-		}
-
 		users, err := userStore.GetAll(r.Context())
 		if err != nil {
 			l.Error("failed to get users", "error", err)
@@ -306,19 +293,6 @@ func filterUsersByUsername(users []user.User, username string) []user.User {
 
 func ViewUser(l *slog.Logger, t template.Templater, userStore user.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, ok := httputil.UserFromContext(r.Context())
-		if !ok {
-			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		if currentUser.Role != user.RoleAdmin {
-			http.Redirect(w, r, "/ui", http.StatusFound)
-			return
-		}
-
 		id, err := getUUIDFromRequest(r)
 		if err != nil {
 			l.Debug("could not get UUID from request", "error", err)
@@ -346,40 +320,14 @@ func ViewUser(l *slog.Logger, t template.Templater, userStore user.Store) http.H
 	}
 }
 
-func CreateUserPage(l *slog.Logger, t template.Templater) http.HandlerFunc {
+func CreateUserPage(t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, ok := httputil.UserFromContext(r.Context())
-		if !ok {
-			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		if currentUser.Role != user.RoleAdmin {
-			http.Redirect(w, r, "/ui", http.StatusFound)
-			return
-		}
-
 		t.RenderBase(w, r, nil, "account/users/create.gohtml")
 	}
 }
 
 func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, authUserStore local.AuthUserStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, ok := httputil.UserFromContext(r.Context())
-		if !ok {
-			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		if currentUser.Role != user.RoleAdmin {
-			http.Redirect(w, r, "/ui", http.StatusFound)
-			return
-		}
-
 		u := user.User{
 			ID:        uuid.New(),
 			Username:  user.Username(r.PostFormValue("username")),
@@ -443,11 +391,6 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 			return
 		}
 
-		if currentUser.Role != user.RoleAdmin {
-			http.Redirect(w, r, "/ui", http.StatusFound)
-			return
-		}
-
 		id, err := getUUIDFromRequest(r)
 		if err != nil {
 			l.Debug("could not get UUID from request", "error", err)
@@ -500,19 +443,6 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 
 func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local.AuthUserStore, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, ok := httputil.UserFromContext(r.Context())
-		if !ok {
-			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		if currentUser.Role != user.RoleAdmin {
-			http.Redirect(w, r, "/ui", http.StatusFound)
-			return
-		}
-
 		id, err := getUUIDFromRequest(r)
 		if err != nil {
 			l.Debug("could not get UUID from request", "error", err)

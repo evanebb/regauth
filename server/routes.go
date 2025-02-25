@@ -64,8 +64,9 @@ func addRoutes(
 					r.Delete("/{id}", handlers.DeleteToken(logger, templater, patStore, sessionStore))
 				})
 				r.Route("/users", func(r chi.Router) {
+					r.Use(handlers.RequireRole(user.RoleAdmin))
 					r.Get("/", handlers.UserOverview(logger, templater, userStore))
-					r.Get("/create", handlers.CreateUserPage(logger, templater))
+					r.Get("/create", handlers.CreateUserPage(templater))
 					r.Post("/", handlers.CreateUser(logger, templater, userStore, authUserStore))
 					r.Get("/{id}", handlers.ViewUser(logger, templater, userStore))
 					r.Delete("/{id}", handlers.DeleteUser(logger, templater, userStore, authUserStore, sessionStore))

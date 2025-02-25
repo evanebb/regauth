@@ -72,6 +72,21 @@ func UserAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func RequireRole(role user.Role) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			u, ok := httputil.UserFromContext(r.Context())
+			if !ok || u.Role != role {
+				http.Redirect(w, r, "/ui", http.StatusFound)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
 func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
