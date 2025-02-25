@@ -260,15 +260,15 @@ func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local
 		newPassword := r.PostFormValue("newPassword")
 		confirmPassword := r.PostFormValue("confirmPassword")
 
-		if newPassword != confirmPassword {
-			s, _ := sessionStore.Get(r, "session")
-			s.AddFlash(session.NewFlash(session.FlashTypeError, "Passwords do not match."))
-			err = s.Save(r, w)
-			if err != nil {
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
 				l.Error("failed to save session", "error", err)
-				http.Error(w, "authentication failed", http.StatusUnauthorized)
-				return
 			}
+		}()
+
+		if newPassword != confirmPassword {
+			s.AddFlash(session.NewFlash(session.FlashTypeError, "Passwords do not match."))
 			http.Redirect(w, r, "/ui/account/users", http.StatusFound)
 			return
 		}
@@ -290,15 +290,7 @@ func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local
 			return
 		}
 
-		s, _ := sessionStore.Get(r, "session")
 		s.AddFlash(session.NewFlash(session.FlashTypeSuccess, "Successfully reset password."))
-		err = s.Save(r, w)
-		if err != nil {
-			l.Error("failed to save session", "error", err)
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
-			return
-		}
-
 		http.Redirect(w, r, "/ui/account/users/"+u.ID.String(), http.StatusFound)
 	}
 }
