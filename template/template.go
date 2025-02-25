@@ -1,8 +1,7 @@
 package template
 
 import (
-	"context"
-	"errors"
+	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/user"
 	"github.com/gorilla/sessions"
 	"html/template"
@@ -32,8 +31,8 @@ func (t Templater) renderErr(w http.ResponseWriter, r *http.Request, data any, t
 	}
 
 	var uPtr *user.User
-	u, err := getUserFromRequestContext(r.Context())
-	if err == nil {
+	u, ok := httputil.UserFromContext(r.Context())
+	if ok {
 		uPtr = &u
 	}
 
@@ -68,18 +67,4 @@ func (t Templater) RenderBase(w http.ResponseWriter, r *http.Request, data any, 
 
 func (t Templater) renderServerError(w http.ResponseWriter, r *http.Request) {
 	_ = t.renderErr(w, r, nil, "base", "base.gohtml", "errors/500.gohtml")
-}
-
-func getUserFromRequestContext(ctx context.Context) (user.User, error) {
-	val := ctx.Value("user")
-	if val == nil {
-		return user.User{}, errors.New("no user set in request context")
-	}
-
-	u, ok := val.(user.User)
-	if !ok {
-		return user.User{}, errors.New("user set in request context is not valid")
-	}
-
-	return u, nil
 }

@@ -3,14 +3,74 @@ package handlers
 import (
 	"errors"
 	"github.com/evanebb/regauth/auth/local"
+	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/session"
 	"github.com/evanebb/regauth/template"
 	"github.com/evanebb/regauth/user"
+	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
 	"net/http"
 )
+
+func UserSessionParser(sessionStore sessions.Store, userStore user.Store) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			session, _ := sessionStore.Get(r, "session")
+			val, ok := session.Values["userId"]
+			if !ok {
+				// If no user is found, do not attach it to the context
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			raw, ok := val.(string)
+			if !ok {
+				// User ID isn't a string, no idea how we got here, just remove it from the session
+				delete(session.Values, "userId")
+				_ = session.Save(r, w)
+				http.Redirect(w, r, "/ui/login", http.StatusFound)
+				return
+			}
+
+			id, err := uuid.Parse(raw)
+			if err != nil {
+				// User ID is not a valid UUID, no idea how we got here, just remove it from the session
+				delete(session.Values, "userId")
+				_ = session.Save(r, w)
+				http.Redirect(w, r, "/ui/login", http.StatusFound)
+				return
+			}
+
+			u, err := userStore.GetByID(r.Context(), id)
+			if err != nil {
+				// User does not exist, remove the ID from the session so the user has to re-authenticate
+				delete(session.Values, "userId")
+				_ = session.Save(r, w)
+				http.Redirect(w, r, "/ui/login", http.StatusFound)
+				return
+			}
+
+			ctx := httputil.WithUser(r.Context(), u)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
+func UserAuth(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := httputil.UserFromContext(r.Context()); !ok {
+			http.Redirect(w, r, "/ui/login", http.StatusFound)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
 
 func Login(l *slog.Logger, authUserStore local.AuthUserStore, userStore user.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -82,8 +142,8 @@ func Logout(l *slog.Logger, s sessions.Store) http.HandlerFunc {
 
 func LoginPage(t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := getUserFromRequestContext(r.Context())
-		if err == nil {
+		_, ok := httputil.UserFromContext(r.Context())
+		if ok {
 			http.Redirect(w, r, "/ui", http.StatusFound)
 			return
 		}

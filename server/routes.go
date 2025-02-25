@@ -41,7 +41,7 @@ func addRoutes(
 
 	// UI routes
 	router.Route("/ui", func(r chi.Router) {
-		r.Use(middleware.UserSessionParser(sessionStore, userStore))
+		r.Use(handlers.UserSessionParser(sessionStore, userStore))
 
 		// Routes that do not necessarily require authentication
 		r.Get("/", handlers.Index(templater))
@@ -51,7 +51,7 @@ func addRoutes(
 
 		// Authenticated routes
 		r.Route("/", func(r chi.Router) {
-			r.Use(middleware.UserAuth)
+			r.Use(handlers.UserAuth)
 			r.Get("/logout", handlers.Logout(logger, sessionStore))
 
 			r.Route("/account", func(r chi.Router) {
@@ -77,8 +77,11 @@ func addRoutes(
 				r.Get("/", handlers.UserRepositoryOverview(logger, templater, repoStore))
 				r.Get("/create", handlers.CreateRepositoryPage(logger, templater))
 				r.Post("/", handlers.CreateRepository(logger, templater, repoStore))
-				r.Get("/{id}", handlers.ViewRepository(logger, templater, repoStore))
-				r.Delete("/{id}", handlers.DeleteRepository(logger, templater, repoStore, sessionStore))
+				r.Route("/{id}", func(r chi.Router) {
+					r.Use(handlers.RepositoryParser(logger, templater, repoStore))
+					r.Get("/", handlers.ViewRepository(logger, templater))
+					r.Delete("/", handlers.DeleteRepository(logger, templater, repoStore, sessionStore))
+				})
 			})
 		})
 	})

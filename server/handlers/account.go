@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/evanebb/regauth/auth/local"
+	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/pat"
 	"github.com/evanebb/regauth/session"
 	"github.com/evanebb/regauth/template"
@@ -26,9 +27,9 @@ func ManageAccount(t template.Templater) http.HandlerFunc {
 
 func TokenOverview(l *slog.Logger, t template.Templater, patStore pat.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -53,9 +54,9 @@ func CreateTokenPage(t template.Templater) http.HandlerFunc {
 
 func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, registryHost string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(500)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -70,7 +71,7 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 			exp = time.Now().AddDate(0, 0, 30)
 		case "custom":
 			customExp := r.PostFormValue("customExpirationDate")
-			exp, err = time.Parse("2006-01-02", customExp)
+			exp, err := time.Parse("2006-01-02", customExp)
 			if err != nil {
 				l.Debug("invalid expiration date given", "error", err, "date", customExp)
 				w.WriteHeader(http.StatusBadRequest)
@@ -79,7 +80,7 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 			}
 			exp = exp.Add(24*time.Hour - time.Second)
 		default:
-			l.Debug("invalid expiration type given", "error", err, "expirationType", expirationType)
+			l.Debug("invalid expiration type given", "expirationType", expirationType)
 			w.WriteHeader(http.StatusBadRequest)
 			t.RenderBase(w, r, nil, "errors/400.gohtml")
 			return
@@ -97,7 +98,7 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 			UserID:         u.ID,
 		}
 
-		err = token.IsValid()
+		err := token.IsValid()
 		if err != nil {
 			l.Debug("invalid personal access token given", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -129,9 +130,9 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 
 func ViewToken(l *slog.Logger, t template.Templater, patStore pat.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -195,9 +196,9 @@ func ViewToken(l *slog.Logger, t template.Templater, patStore pat.Store) http.Ha
 
 func DeleteToken(l *slog.Logger, t template.Templater, patStore pat.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -256,9 +257,9 @@ func DeleteToken(l *slog.Logger, t template.Templater, patStore pat.Store, sessi
 
 func UserOverview(l *slog.Logger, t template.Templater, userStore user.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -305,9 +306,9 @@ func filterUsersByUsername(users []user.User, username string) []user.User {
 
 func ViewUser(l *slog.Logger, t template.Templater, userStore user.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		currentUser, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -347,9 +348,9 @@ func ViewUser(l *slog.Logger, t template.Templater, userStore user.Store) http.H
 
 func CreateUserPage(l *slog.Logger, t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		currentUser, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -366,9 +367,9 @@ func CreateUserPage(l *slog.Logger, t template.Templater) http.HandlerFunc {
 
 func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, authUserStore local.AuthUserStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		currentUser, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -387,7 +388,7 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 			Role:      user.Role(r.PostFormValue("role")),
 		}
 
-		err = u.IsValid()
+		err := u.IsValid()
 		if err != nil {
 			l.Debug("invalid user given", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -434,9 +435,9 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 
 func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, authUserStore local.AuthUserStore, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		currentUser, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -499,9 +500,9 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 
 func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local.AuthUserStore, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		currentUser, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return

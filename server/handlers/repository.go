@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/repository"
 	"github.com/evanebb/regauth/session"
 	"github.com/evanebb/regauth/template"
@@ -11,6 +13,72 @@ import (
 	"net/http"
 	"strings"
 )
+
+type repositoryCtxKey struct{}
+
+func RepositoryParser(l *slog.Logger, t template.Templater, repoStore repository.Store) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			u, ok := httputil.UserFromContext(r.Context())
+			if !ok {
+				l.Error("no user in request context")
+				w.WriteHeader(500)
+				t.RenderBase(w, r, nil, "errors/500.gohtml")
+				return
+			}
+
+			id, err := getUUIDFromRequest(r)
+			if err != nil {
+				l.Debug("could not get UUID from request", "error", err)
+				w.WriteHeader(http.StatusBadRequest)
+				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				return
+			}
+
+			repo, err := repoStore.GetByID(r.Context(), id)
+			if err != nil {
+				if errors.Is(err, repository.ErrNotFound) {
+					l.Error("repository not found", "error", err, "repositoryId", id)
+					w.WriteHeader(http.StatusNotFound)
+					t.RenderBase(w, r, nil, "errors/404.gohtml")
+					return
+				}
+
+				l.Error("failed to get repository", "error", err, "repositoryId", id)
+				w.WriteHeader(http.StatusInternalServerError)
+				t.RenderBase(w, r, nil, "errors/500.gohtml")
+				return
+			}
+
+			if repo.OwnerID != u.ID {
+				l.Debug("repo does not belong to user", "repositoryId", repo.ID, "userId", u.ID)
+				w.WriteHeader(http.StatusNotFound)
+				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				return
+			}
+
+			r = r.WithContext(context.WithValue(r.Context(), repositoryCtxKey{}, repo))
+			next.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(fn)
+	}
+}
+
+// getRepositoryFromRequestContext parses the current repository.Repository from the given request context.
+// This requires the user to have been previously set in the context, for example by RepositoryParser.
+func getRepositoryFromRequestContext(ctx context.Context) (repository.Repository, error) {
+	val := ctx.Value(repositoryCtxKey{})
+	if val == nil {
+		return repository.Repository{}, errors.New("no repository set in request context")
+	}
+
+	u, ok := val.(repository.Repository)
+	if !ok {
+		return repository.Repository{}, errors.New("repository set in request context is not valid")
+	}
+
+	return u, nil
+}
 
 func Explore(l *slog.Logger, t template.Templater, s repository.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -35,9 +103,9 @@ func Explore(l *slog.Logger, t template.Templater, s repository.Store) http.Hand
 
 func UserRepositoryOverview(l *slog.Logger, t template.Templater, s repository.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(500)
 			t.Render(w, r, nil, "errors/500.gohtml")
 			return
@@ -80,9 +148,9 @@ func filterRepositoriesByName(r []repository.Repository, name string) []reposito
 
 func CreateRepositoryPage(l *slog.Logger, t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(500)
 			t.Render(w, r, nil, "errors/500.gohtml")
 		}
@@ -99,9 +167,9 @@ func CreateRepositoryPage(l *slog.Logger, t template.Templater) http.HandlerFunc
 
 func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
-		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
+		u, ok := httputil.UserFromContext(r.Context())
+		if !ok {
+			l.Error("no user in request context")
 			w.WriteHeader(500)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
@@ -115,7 +183,7 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 			OwnerID:    u.ID,
 		}
 
-		err = repo.IsValid()
+		err := repo.IsValid()
 		if err != nil {
 			l.Debug("invalid repository given", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -135,43 +203,13 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 	}
 }
 
-func ViewRepository(l *slog.Logger, t template.Templater, repoStore repository.Store) http.HandlerFunc {
+func ViewRepository(l *slog.Logger, t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
+		repo, err := getRepositoryFromRequestContext(r.Context())
 		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
-			w.WriteHeader(500)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		id, err := getUUIDFromRequest(r)
-		if err != nil {
-			l.Debug("could not get UUID from request", "error", err)
-			w.WriteHeader(http.StatusBadRequest)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
-			return
-		}
-
-		repo, err := repoStore.GetByID(r.Context(), id)
-		if err != nil {
-			if errors.Is(err, repository.ErrNotFound) {
-				l.Error("repository not found", "error", err, "repositoryId", id)
-				w.WriteHeader(http.StatusNotFound)
-				t.RenderBase(w, r, nil, "errors/404.gohtml")
-				return
-			}
-
-			l.Error("failed to get repository", "error", err, "repositoryId", id)
+			l.Error("could not get repository from request context", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		if repo.OwnerID != u.ID {
-			l.Debug("repo does not belong to user", "repositoryId", repo.ID, "userId", u.ID)
-			w.WriteHeader(http.StatusNotFound)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
 			return
 		}
 
@@ -181,41 +219,11 @@ func ViewRepository(l *slog.Logger, t template.Templater, repoStore repository.S
 
 func DeleteRepository(l *slog.Logger, t template.Templater, repoStore repository.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserFromRequestContext(r.Context())
+		repo, err := getRepositoryFromRequestContext(r.Context())
 		if err != nil {
-			l.Error("failed to get user from request context", "error", err)
-			w.WriteHeader(500)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		id, err := getUUIDFromRequest(r)
-		if err != nil {
-			l.Debug("could not get UUID from request", "error", err)
-			w.WriteHeader(http.StatusBadRequest)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
-			return
-		}
-
-		repo, err := repoStore.GetByID(r.Context(), id)
-		if err != nil {
-			if errors.Is(err, repository.ErrNotFound) {
-				l.Error("repository not found", "error", err, "repositoryId", id)
-				w.WriteHeader(http.StatusNotFound)
-				t.RenderBase(w, r, nil, "errors/404.gohtml")
-				return
-			}
-
-			l.Error("failed to get repository", "error", err, "repository", repo)
+			l.Error("could not get repository from request context", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
-			return
-		}
-
-		if repo.OwnerID != u.ID {
-			l.Debug("repo does not belong to user", "repositoryId", repo.ID, "userId", u.ID)
-			w.WriteHeader(http.StatusNotFound)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
 			return
 		}
 
