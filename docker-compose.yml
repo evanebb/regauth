@@ -27,7 +27,7 @@ services:
       REGAUTH_DATABASE_NAME: regauth
       REGAUTH_DATABASE_USER: regauth
       REGAUTH_DATABASE_PASSWORD: Welkom01
-      REGAUTH_TOKEN_ISSUER: localhost:8080
+      REGAUTH_TOKEN_ISSUER: localhost:8000
       REGAUTH_TOKEN_SERVICE: localhost:5000
       REGAUTH_TOKEN_CERTIFICATE: /etc/regauth/cert.pem
       REGAUTH_TOKEN_KEY: /etc/regauth/key.pem

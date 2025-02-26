@@ -13,7 +13,7 @@ database:
   password: Welkom01
 
 token:
-  issuer: localhost:8080
+  issuer: localhost:8000
   service: localhost:5000
   certificate: keys/cert.pem
   key: keys/key.pem
