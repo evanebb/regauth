@@ -34,6 +34,11 @@ func addRoutes(
 ) {
 	loggerMiddleware := middleware.Logger(logger)
 	router.Use(chiMiddleware.RequestID, middleware.MethodOverride, loggerMiddleware, chiMiddleware.Recoverer)
+
+	// Note: if more extensive (and sensitive) information is ever added to the /health endpoint, it should listen on a
+	// separate port from the main server, so that clients cannot directly access it!
+	router.Handle("/health", handlers.Health())
+
 	router.Handle("/token", handlers.GenerateToken(logger, authenticator, authorizer, tokenIssuer, tokenService, tokenSigner))
 
 	// Redirect the index to the UI by default
