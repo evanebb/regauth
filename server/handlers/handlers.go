@@ -10,3 +10,9 @@ func Index(t template.Templater) http.HandlerFunc {
 		t.RenderBase(w, r, nil, "home.gohtml")
 	}
 }
+
+func NotFound(t template.Templater) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t.RenderBase(w, r, nil, "errors/404.gohtml")
+	}
+}

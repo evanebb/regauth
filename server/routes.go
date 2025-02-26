@@ -41,6 +41,8 @@ func addRoutes(
 
 	// UI routes
 	router.Route("/ui", func(r chi.Router) {
+		r.NotFound(handlers.NotFound(templater))
+
 		r.Use(handlers.UserSessionParser(sessionStore, userStore))
 
 		// Routes that do not necessarily require authentication
