@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/pat"
 	"github.com/evanebb/regauth/session"
@@ -26,38 +27,34 @@ func PersonalAccessTokenParser(l *slog.Logger, t template.Templater, patStore pa
 			u, ok := httputil.LoggedInUserFromContext(r.Context())
 			if !ok {
 				l.Error("no user in request context")
-				w.WriteHeader(http.StatusInternalServerError)
 				t.RenderBase(w, r, nil, "errors/500.gohtml")
 				return
 			}
 
 			id, err := getUUIDFromRequest(r)
 			if err != nil {
+				// If the user supplies an invalid ID, just return the 404 page
 				l.Debug("could not get UUID from request", "error", err)
-				w.WriteHeader(http.StatusBadRequest)
-				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				t.RenderBase(w, r, nil, "errors/404.gohtml")
 				return
 			}
 
 			token, err := patStore.GetByID(r.Context(), id)
 			if err != nil {
 				if errors.Is(err, pat.ErrNotFound) {
-					l.Error("personal access token not found", "error", err, "tokenId", id)
-					w.WriteHeader(http.StatusNotFound)
+					l.Debug("personal access token not found", "error", err, "tokenId", id)
 					t.RenderBase(w, r, nil, "errors/404.gohtml")
 					return
 				}
 
 				l.Error("failed to get personal access token", "error", err, "tokenId", id)
-				w.WriteHeader(http.StatusInternalServerError)
 				t.RenderBase(w, r, nil, "errors/500.gohtml")
 				return
 			}
 
 			if token.UserID != u.ID {
 				l.Debug("personal access token does not belong to user", "tokenId", token.ID, "userId", u.ID)
-				w.WriteHeader(http.StatusNotFound)
-				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				t.RenderBase(w, r, nil, "errors/404.gohtml")
 				return
 			}
 
@@ -87,7 +84,6 @@ func TokenOverview(l *slog.Logger, t template.Templater, patStore pat.Store) htt
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -95,8 +91,8 @@ func TokenOverview(l *slog.Logger, t template.Templater, patStore pat.Store) htt
 		tokens, err := patStore.GetAllForUser(r.Context(), u.ID)
 		if err != nil {
 			l.Error("failed to get personal access tokens for user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			t.Render(w, r, nil, "errors/500.gohtml")
+			t.RenderBase(w, r, nil, "errors/500.gohtml")
+			return
 		}
 
 		t.RenderBase(w, r, tokens, "account/tokens/overview.gohtml")
@@ -109,7 +105,7 @@ func CreateTokenPage(t template.Templater) http.HandlerFunc {
 	}
 }
 
-func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, registryHost string) http.HandlerFunc {
+func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, registryHost string, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s, _ := sessionStore.Get(r, "session")
 		defer func() {
@@ -121,7 +117,6 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -173,7 +168,6 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 		err = patStore.Create(r.Context(), token, plainTextToken)
 		if err != nil {
 			l.Error("failed to create token", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -197,7 +191,6 @@ func ViewToken(l *slog.Logger, t template.Templater, patStore pat.Store) http.Ha
 		token, ok := personalAccessTokenFromContext(r.Context())
 		if !ok {
 			l.Error("no personal access token set in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -205,7 +198,6 @@ func ViewToken(l *slog.Logger, t template.Templater, patStore pat.Store) http.Ha
 		usageLog, err := patStore.GetUsageLog(r.Context(), token.ID)
 		if err != nil {
 			l.Error("failed to get personal access token usage log", "error", err, "tokenId", token.ID)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -240,7 +232,6 @@ func DeleteToken(l *slog.Logger, t template.Templater, patStore pat.Store, sessi
 		token, ok := personalAccessTokenFromContext(r.Context())
 		if !ok {
 			l.Error("no personal access token set in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -248,7 +239,6 @@ func DeleteToken(l *slog.Logger, t template.Templater, patStore pat.Store, sessi
 		err := patStore.DeleteByID(r.Context(), token.ID)
 		if err != nil {
 			l.Error("failed to delete personal access token", "error", err, "tokenId", token.ID)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}

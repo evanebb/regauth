@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/evanebb/regauth/auth/local"
 	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/session"
@@ -26,8 +27,7 @@ func UserParser(l *slog.Logger, t template.Templater, userStore user.Store) func
 			id, err := getUUIDFromRequest(r)
 			if err != nil {
 				l.Debug("could not get UUID from request", "error", err)
-				w.WriteHeader(http.StatusBadRequest)
-				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				t.RenderBase(w, r, nil, "errors/404.gohtml")
 				return
 			}
 
@@ -35,13 +35,11 @@ func UserParser(l *slog.Logger, t template.Templater, userStore user.Store) func
 			if err != nil {
 				if errors.Is(err, user.ErrNotFound) {
 					l.Error("user not found", "error", err, "userId", id)
-					w.WriteHeader(http.StatusNotFound)
 					t.RenderBase(w, r, nil, "errors/404.gohtml")
 					return
 				}
 
 				l.Error("failed to get user", "error", err, "userId", id)
-				w.WriteHeader(http.StatusInternalServerError)
 				t.RenderBase(w, r, nil, "errors/500.gohtml")
 				return
 			}
@@ -72,7 +70,6 @@ func UserOverview(l *slog.Logger, t template.Templater, userStore user.Store) ht
 		users, err := userStore.GetAll(r.Context())
 		if err != nil {
 			l.Error("failed to get users", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -108,7 +105,6 @@ func ViewUser(l *slog.Logger, t template.Templater, userStore user.Store) http.H
 		u, ok := userFromContext(r.Context())
 		if !ok {
 			l.Error("no requested user set in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -151,7 +147,6 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(r.PostFormValue("password")), bcrypt.DefaultCost)
 		if err != nil {
 			l.Error("failed to hash password", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -167,7 +162,6 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		err = userStore.Create(r.Context(), u)
 		if err != nil {
 			l.Error("failed to create user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -176,7 +170,6 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		err = authUserStore.Create(r.Context(), authUser)
 		if err != nil {
 			l.Error("failed to create auth user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -197,7 +190,6 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		currentUser, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -205,7 +197,6 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		u, ok := userFromContext(r.Context())
 		if !ok {
 			l.Error("no requested user set in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -220,7 +211,6 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		err = userStore.DeleteByID(r.Context(), u.ID)
 		if err != nil {
 			l.Error("failed to delete user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -228,7 +218,6 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		err = authUserStore.DeleteByID(r.Context(), u.ID)
 		if err != nil {
 			l.Error("failed to delete auth user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -243,7 +232,6 @@ func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local
 		u, ok := userFromContext(r.Context())
 		if !ok {
 			l.Error("no requested user set in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -251,7 +239,6 @@ func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local
 		authUser, err := authUserStore.GetByID(r.Context(), u.ID)
 		if err != nil {
 			l.Error("failed to get auth user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -275,7 +262,6 @@ func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 		if err != nil {
 			l.Error("failed to hash password", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -284,7 +270,6 @@ func ResetUserPassword(l *slog.Logger, t template.Templater, authUserStore local
 		err = authUserStore.Update(r.Context(), authUser)
 		if err != nil {
 			l.Error("failed to update auth user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}

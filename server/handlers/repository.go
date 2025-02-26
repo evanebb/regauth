@@ -24,7 +24,6 @@ func RepositoryParser(l *slog.Logger, t template.Templater, repoStore repository
 			u, ok := httputil.LoggedInUserFromContext(r.Context())
 			if !ok {
 				l.Error("no user in request context")
-				w.WriteHeader(http.StatusInternalServerError)
 				t.RenderBase(w, r, nil, "errors/500.gohtml")
 				return
 			}
@@ -32,30 +31,26 @@ func RepositoryParser(l *slog.Logger, t template.Templater, repoStore repository
 			id, err := getUUIDFromRequest(r)
 			if err != nil {
 				l.Debug("could not get UUID from request", "error", err)
-				w.WriteHeader(http.StatusBadRequest)
-				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				t.RenderBase(w, r, nil, "errors/404.gohtml")
 				return
 			}
 
 			repo, err := repoStore.GetByID(r.Context(), id)
 			if err != nil {
 				if errors.Is(err, repository.ErrNotFound) {
-					l.Error("repository not found", "error", err, "repositoryId", id)
-					w.WriteHeader(http.StatusNotFound)
+					l.Debug("repository not found", "error", err, "repositoryId", id)
 					t.RenderBase(w, r, nil, "errors/404.gohtml")
 					return
 				}
 
 				l.Error("failed to get repository", "error", err, "repositoryId", id)
-				w.WriteHeader(http.StatusInternalServerError)
 				t.RenderBase(w, r, nil, "errors/500.gohtml")
 				return
 			}
 
 			if repo.OwnerID != u.ID {
 				l.Debug("repo does not belong to user", "repositoryId", repo.ID, "userId", u.ID)
-				w.WriteHeader(http.StatusNotFound)
-				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				t.RenderBase(w, r, nil, "errors/404.gohtml")
 				return
 			}
 
@@ -85,7 +80,6 @@ func Explore(l *slog.Logger, t template.Templater, s repository.Store) http.Hand
 		repositories, err := s.GetAllPublic(r.Context())
 		if err != nil {
 			l.Error("failed to get public repositories", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 		}
 
@@ -105,7 +99,6 @@ func UserRepositoryOverview(l *slog.Logger, t template.Templater, s repository.S
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -113,7 +106,6 @@ func UserRepositoryOverview(l *slog.Logger, t template.Templater, s repository.S
 		repositories, err := s.GetAllByOwner(r.Context(), u.ID)
 		if err != nil {
 			l.Error("failed to get repositories for user", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -150,7 +142,6 @@ func CreateRepositoryPage(l *slog.Logger, t template.Templater) http.HandlerFunc
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.Render(w, r, nil, "errors/500.gohtml")
 		}
 
@@ -176,7 +167,6 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -200,7 +190,6 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 		err = repoStore.Create(r.Context(), repo)
 		if err != nil {
 			l.Error("failed to create repository", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -214,7 +203,6 @@ func ViewRepository(l *slog.Logger, t template.Templater) http.HandlerFunc {
 		repo, ok := repositoryFromContext(r.Context())
 		if !ok {
 			l.Error("no repository in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -235,7 +223,6 @@ func DeleteRepository(l *slog.Logger, t template.Templater, repoStore repository
 		repo, ok := repositoryFromContext(r.Context())
 		if !ok {
 			l.Error("no repository in request context")
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
@@ -243,7 +230,6 @@ func DeleteRepository(l *slog.Logger, t template.Templater, repoStore repository
 		err := repoStore.DeleteByID(r.Context(), repo.ID)
 		if err != nil {
 			l.Error("failed to delete repository", "error", err, "repositoryId", repo.ID)
-			w.WriteHeader(http.StatusInternalServerError)
 			t.RenderBase(w, r, nil, "errors/500.gohtml")
 			return
 		}
