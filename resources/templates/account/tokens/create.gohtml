@@ -12,11 +12,11 @@
         <div class="mb-4">
             <div class="form-floating mb-3">
                 <input type="text" id="description" name="description" class="form-control" placeholder="description"
-                       required>
+                       required hx-preserve>
                 <label for="description">Description</label>
             </div>
             <div class="form-floating mb-3">
-                <select id="permission" name="permission" class="form-select" required>
+                <select id="permission" name="permission" class="form-select" required hx-preserve>
                     <option value="readOnly" selected>Read-only</option>
                     <option value="readWrite">Read and write</option>
                     <option value="readWriteDelete">Read, write and delete</option>
@@ -25,7 +25,7 @@
             </div>
             <div class="form-floating mb-3">
                 <select id="expirationType" name="expirationType" class="form-select"
-                        hx-on:change="handleExpirationTypeUpdate()">
+                        hx-on:change="handleExpirationTypeUpdate()" hx-preserve>
                     <option value="7d" selected>7 days</option>
                     <option value="30d">30 days</option>
                     <option value="custom">Custom</option>
@@ -34,7 +34,7 @@
             </div>
             <div class="mb-3">
                 <input type="date" id="customExpirationDate" name="customExpirationDate" class="form-control d-none"
-                       placeholder="customExpirationDate" required>
+                       placeholder="customExpirationDate" required hx-preserve>
                 <label for="customExpirationDate" class="d-none">Expiration date</label>
             </div>
         </div>

@@ -61,7 +61,7 @@ func addRoutes(
 				r.Route("/tokens", func(r chi.Router) {
 					r.Get("/", handlers.TokenOverview(logger, templater, patStore))
 					r.Get("/create", handlers.CreateTokenPage(templater))
-					r.Post("/", handlers.CreateToken(logger, templater, patStore, registryHost))
+					r.Post("/", handlers.CreateToken(logger, templater, patStore, registryHost, sessionStore))
 					r.Route("/{id}", func(r chi.Router) {
 						r.Use(handlers.PersonalAccessTokenParser(logger, templater, patStore))
 						r.Get("/", handlers.ViewToken(logger, templater, patStore))
@@ -72,7 +72,7 @@ func addRoutes(
 					r.Use(handlers.RequireRole(user.RoleAdmin))
 					r.Get("/", handlers.UserOverview(logger, templater, userStore))
 					r.Get("/create", handlers.CreateUserPage(templater))
-					r.Post("/", handlers.CreateUser(logger, templater, userStore, authUserStore))
+					r.Post("/", handlers.CreateUser(logger, templater, userStore, authUserStore, sessionStore))
 					r.Route("/{id}", func(r chi.Router) {
 						r.Use(handlers.UserParser(logger, templater, userStore))
 						r.Get("/", handlers.ViewUser(logger, templater, userStore))
@@ -85,7 +85,7 @@ func addRoutes(
 			r.Route("/repositories", func(r chi.Router) {
 				r.Get("/", handlers.UserRepositoryOverview(logger, templater, repoStore))
 				r.Get("/create", handlers.CreateRepositoryPage(logger, templater))
-				r.Post("/", handlers.CreateRepository(logger, templater, repoStore))
+				r.Post("/", handlers.CreateRepository(logger, templater, repoStore, sessionStore))
 				r.Route("/{id}", func(r chi.Router) {
 					r.Use(handlers.RepositoryParser(logger, templater, repoStore))
 					r.Get("/", handlers.ViewRepository(logger, templater))

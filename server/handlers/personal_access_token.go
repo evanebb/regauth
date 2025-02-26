@@ -111,6 +111,13 @@ func CreateTokenPage(t template.Templater) http.HandlerFunc {
 
 func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, registryHost string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
@@ -131,15 +138,15 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 			exp, err := time.Parse("2006-01-02", customExp)
 			if err != nil {
 				l.Debug("invalid expiration date given", "error", err, "date", customExp)
-				w.WriteHeader(http.StatusBadRequest)
-				t.RenderBase(w, r, nil, "errors/400.gohtml")
+				s.AddFlash(session.NewFlash(session.FlashTypeError, fmt.Sprintf("Invalid expiration date")))
+				t.RenderBase(w, r, nil, "account/tokens/create.gohtml")
 				return
 			}
 			exp = exp.Add(24*time.Hour - time.Second)
 		default:
 			l.Debug("invalid expiration type given", "expirationType", expirationType)
-			w.WriteHeader(http.StatusBadRequest)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
+			s.AddFlash(session.NewFlash(session.FlashTypeError, fmt.Sprintf("Invalid expiration type")))
+			t.RenderBase(w, r, nil, "account/tokens/create.gohtml")
 			return
 		}
 
@@ -158,8 +165,8 @@ func CreateToken(l *slog.Logger, t template.Templater, patStore pat.Store, regis
 		err := token.IsValid()
 		if err != nil {
 			l.Debug("invalid personal access token given", "error", err)
-			w.WriteHeader(http.StatusBadRequest)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
+			s.AddFlash(session.NewFlash(session.FlashTypeError, fmt.Sprintf("Invalid personal access token: %s", err)))
+			t.RenderBase(w, r, nil, "account/tokens/create.gohtml")
 			return
 		}
 
@@ -223,6 +230,13 @@ func ViewToken(l *slog.Logger, t template.Templater, patStore pat.Store) http.Ha
 
 func DeleteToken(l *slog.Logger, t template.Templater, patStore pat.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
 		token, ok := personalAccessTokenFromContext(r.Context())
 		if !ok {
 			l.Error("no personal access token set in request context")
@@ -239,15 +253,7 @@ func DeleteToken(l *slog.Logger, t template.Templater, patStore pat.Store, sessi
 			return
 		}
 
-		s, _ := sessionStore.Get(r, "session")
 		s.AddFlash(session.NewFlash(session.FlashTypeSuccess, "Successfully deleted personal access token!"))
-		err = s.Save(r, w)
-		if err != nil {
-			l.Error("failed to save session", "error", err)
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
-			return
-		}
-
 		http.Redirect(w, r, "/ui/account/tokens", http.StatusFound)
 	}
 }

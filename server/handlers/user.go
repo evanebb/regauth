@@ -123,8 +123,15 @@ func CreateUserPage(t template.Templater) http.HandlerFunc {
 	}
 }
 
-func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, authUserStore local.AuthUserStore) http.HandlerFunc {
+func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, authUserStore local.AuthUserStore, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
 		u := user.User{
 			ID:        uuid.New(),
 			Username:  user.Username(r.PostFormValue("username")),
@@ -136,8 +143,8 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 		err := u.IsValid()
 		if err != nil {
 			l.Debug("invalid user given", "error", err)
-			w.WriteHeader(http.StatusBadRequest)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
+			s.AddFlash(session.NewFlash(session.FlashTypeError, fmt.Sprintf("Invalid user: %s", err)))
+			t.RenderBase(w, r, nil, "account/users/create.gohtml")
 			return
 		}
 
@@ -180,6 +187,13 @@ func CreateUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 
 func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, authUserStore local.AuthUserStore, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
 		currentUser, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
@@ -198,14 +212,7 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 
 		var err error
 		if currentUser.ID == u.ID {
-			s, _ := sessionStore.Get(r, "session")
 			s.AddFlash(session.NewFlash(session.FlashTypeError, "Cannot delete currently logged-in user."))
-			err = s.Save(r, w)
-			if err != nil {
-				l.Error("failed to save session", "error", err)
-				http.Error(w, "authentication failed", http.StatusUnauthorized)
-				return
-			}
 			http.Redirect(w, r, "/ui/account/users", http.StatusFound)
 			return
 		}
@@ -226,15 +233,7 @@ func DeleteUser(l *slog.Logger, t template.Templater, userStore user.Store, auth
 			return
 		}
 
-		s, _ := sessionStore.Get(r, "session")
 		s.AddFlash(session.NewFlash(session.FlashTypeSuccess, "Successfully deleted user!"))
-		err = s.Save(r, w)
-		if err != nil {
-			l.Error("failed to save session", "error", err)
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
-			return
-		}
-
 		http.Redirect(w, r, "/ui/account/users", http.StatusFound)
 	}
 }

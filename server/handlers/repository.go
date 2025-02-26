@@ -164,8 +164,15 @@ func CreateRepositoryPage(l *slog.Logger, t template.Templater) http.HandlerFunc
 	}
 }
 
-func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository.Store) http.HandlerFunc {
+func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
 		u, ok := httputil.LoggedInUserFromContext(r.Context())
 		if !ok {
 			l.Error("no user in request context")
@@ -185,8 +192,8 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 		err := repo.IsValid()
 		if err != nil {
 			l.Debug("invalid repository given", "error", err)
-			w.WriteHeader(http.StatusBadRequest)
-			t.RenderBase(w, r, nil, "errors/400.gohtml")
+			s.AddFlash(session.NewFlash(session.FlashTypeError, fmt.Sprintf("Invalid repository: %s", err)))
+			t.RenderBase(w, r, nil, "repositories/create.gohtml")
 			return
 		}
 
@@ -218,6 +225,13 @@ func ViewRepository(l *slog.Logger, t template.Templater) http.HandlerFunc {
 
 func DeleteRepository(l *slog.Logger, t template.Templater, repoStore repository.Store, sessionStore sessions.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		s, _ := sessionStore.Get(r, "session")
+		defer func() {
+			if err := s.Save(r, w); err != nil {
+				l.Error("failed to save session", "error", err)
+			}
+		}()
+
 		repo, ok := repositoryFromContext(r.Context())
 		if !ok {
 			l.Error("no repository in request context")
@@ -234,15 +248,7 @@ func DeleteRepository(l *slog.Logger, t template.Templater, repoStore repository
 			return
 		}
 
-		s, _ := sessionStore.Get(r, "session")
 		s.AddFlash(session.NewFlash(session.FlashTypeSuccess, "Successfully deleted repository!"))
-		err = s.Save(r, w)
-		if err != nil {
-			l.Error("failed to save session", "error", err)
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
-			return
-		}
-
 		http.Redirect(w, r, "/ui/repositories", http.StatusFound)
 	}
 }
