@@ -1,5 +1,10 @@
 {{define "title"}}Error{{end}}
 {{define "main"}}
-    <h1>Error</h1>
-    <p>An error occurred.</p>
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center">
+            <h1 class="display-1 fw-bold text-light">500 <i class="bi bi-emoji-tear-fill"></i></h1>
+            <p class="fs-3 text-light">An unexpected error occurred.</p>
+            <a href="/ui" class="btn btn-primary">Go to homepage</a>
+        </div>
+    </div>
 {{end}}
