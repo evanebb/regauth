@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/repository"
 	"github.com/evanebb/regauth/session"
