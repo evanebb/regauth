@@ -129,7 +129,7 @@ func filterRepositoriesByName(r []repository.Repository, name string) []reposito
 
 	var filtered []repository.Repository
 	for _, repo := range r {
-		fullName := repo.Namespace + "/" + repo.Name
+		fullName := repo.Namespace + "/" + repo.Name.String()
 		if strings.Contains(fullName, name) {
 			filtered = append(filtered, repo)
 		}
@@ -175,7 +175,7 @@ func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository
 		repo := repository.Repository{
 			ID:         uuid.New(),
 			Namespace:  u.Username.String(),
-			Name:       r.PostFormValue("name"),
+			Name:       repository.Name(r.PostFormValue("name")),
 			Visibility: repository.Visibility(r.PostFormValue("visibility")),
 			OwnerID:    u.ID,
 		}
