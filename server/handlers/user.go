@@ -100,7 +100,7 @@ func filterUsersByUsername(users []user.User, username string) []user.User {
 	return filtered
 }
 
-func ViewUser(l *slog.Logger, t template.Templater, userStore user.Store) http.HandlerFunc {
+func ViewUser(l *slog.Logger, t template.Templater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		u, ok := userFromContext(r.Context())
 		if !ok {

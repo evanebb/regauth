@@ -80,7 +80,7 @@ func addRoutes(
 					r.Post("/", handlers.CreateUser(logger, templater, userStore, authUserStore, sessionStore))
 					r.Route("/{id}", func(r chi.Router) {
 						r.Use(handlers.UserParser(logger, templater, userStore))
-						r.Get("/", handlers.ViewUser(logger, templater, userStore))
+						r.Get("/", handlers.ViewUser(logger, templater))
 						r.Delete("/", handlers.DeleteUser(logger, templater, userStore, authUserStore, sessionStore))
 						r.Post("/reset-password", handlers.ResetUserPassword(logger, templater, authUserStore, sessionStore))
 					})
