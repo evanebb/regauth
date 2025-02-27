@@ -22,7 +22,7 @@ func GenerateToken(
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
-			writeRegistryErrorResponse(w, "UNSUPPORTED", "unsupported operation", 405)
+			writeRegistryErrorResponse(w, "UNSUPPORTED", "unsupported operation", http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -38,11 +38,11 @@ func GenerateToken(
 			if err != nil {
 				if errors.Is(err, auth.ErrAuthenticationFailed) {
 					l.Info("authentication failed", "error", err)
-					writeRegistryErrorResponse(w, "UNAUTHORIZED", "authentication failed", 401)
+					writeRegistryErrorResponse(w, "UNAUTHORIZED", "authentication failed", http.StatusUnauthorized)
 					return
 				}
 				l.Error("unknown error occurred during authentication", "error", err)
-				writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", 500)
+				writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 				return
 			}
 
@@ -54,14 +54,14 @@ func GenerateToken(
 		grantedAccess, err := authorizer.AuthorizeAccess(r.Context(), p, requestedAccess)
 		if err != nil {
 			l.Error("unknown error occurred during authorization", "error", err)
-			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", 500)
+			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 			return
 		}
 
 		requestedService := r.URL.Query().Get("service")
 		if requestedService != service {
 			l.Info("authorization requested for unknown service")
-			writeRegistryErrorResponse(w, "DENIED", "authorization requested for unknown service", 403)
+			writeRegistryErrorResponse(w, "DENIED", "authorization requested for unknown service", http.StatusForbidden)
 			return
 		}
 
@@ -86,7 +86,7 @@ func GenerateToken(
 		token, err := jwt.Signed(signer).Claims(claims).Claims(privateClaims).Serialize()
 		if err != nil {
 			l.Error("unknown error occurred when building token", "error", err)
-			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", 500)
+			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 			return
 		}
 
