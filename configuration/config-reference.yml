@@ -12,8 +12,6 @@ http:
   # Path to the TLS certificate/key file to use for HTTPS. If not specified, the server will listen use HTTP.
   certificate: /path/to/cert.pem
   key: /path/to/key.pem
-  # Secret key to use to verify session cookies. This is a required directive that has no default value.
-  sessionKey: thisisaverysecretkey
 
 # Database (PostgreSQL) configuration
 database:
