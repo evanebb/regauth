@@ -142,10 +142,22 @@ func GetUser(l *slog.Logger) http.HandlerFunc {
 
 func DeleteUser(l *slog.Logger, s user.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		currentUser, ok := middleware.AuthenticatedUserFromContext(r.Context())
+		if !ok {
+			l.ErrorContext(r.Context(), "could not parse authenticated user from request context")
+			response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
+			return
+		}
+
 		u, ok := userFromContext(r.Context())
 		if !ok {
 			l.ErrorContext(r.Context(), "could not parse user from request context")
 			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		if currentUser.ID == u.ID {
+			response.WriteJSONError(w, http.StatusBadRequest, "cannot delete current user")
 			return
 		}
 
