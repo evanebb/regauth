@@ -1,4 +1,4 @@
-package pat
+package token
 
 import (
 	"errors"
@@ -9,11 +9,11 @@ import (
 )
 
 type PersonalAccessToken struct {
-	ID             uuid.UUID
-	Description    Description
-	Permission     Permission
-	ExpirationDate time.Time
-	UserID         uuid.UUID
+	ID             uuid.UUID   `json:"id"`
+	Description    Description `json:"description"`
+	Permission     Permission  `json:"permission"`
+	ExpirationDate time.Time   `json:"expirationDate"`
+	UserID         uuid.UUID   `json:"-"`
 }
 
 func (t PersonalAccessToken) IsValid() error {
@@ -77,20 +77,6 @@ func (p Permission) GetAllowedActions() []string {
 		return []string{}
 	}
 	return a
-}
-
-func (p Permission) HumanReadable() string {
-	m := map[Permission]string{
-		PermissionReadOnly:        "Read-only",
-		PermissionReadWrite:       "Read and write",
-		PermissionReadWriteDelete: "Read, write and delete",
-	}
-
-	h, ok := m[p]
-	if !ok {
-		return ""
-	}
-	return h
 }
 
 // UsageLogEntry is a single entry in the usage log of a PersonalAccessToken.

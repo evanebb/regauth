@@ -1,12 +1,14 @@
-package pat
+package token
 
 import (
 	"context"
+	"github.com/evanebb/regauth/store"
 	"github.com/google/uuid"
 )
 
 type Store interface {
-	GetAllForUser(ctx context.Context, userID uuid.UUID) ([]PersonalAccessToken, error)
+	store.TransactionStore
+	GetAllByUser(ctx context.Context, userID uuid.UUID) ([]PersonalAccessToken, error)
 	GetByID(ctx context.Context, id uuid.UUID) (PersonalAccessToken, error)
 	GetByPlainTextToken(ctx context.Context, plainTextToken string) (PersonalAccessToken, error)
 	// Create will create the given token in the underlying store. Note that the plain-text token is a password, and

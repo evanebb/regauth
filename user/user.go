@@ -3,17 +3,13 @@ package user
 import (
 	"errors"
 	"github.com/google/uuid"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"regexp"
 )
 
 type User struct {
-	ID        uuid.UUID
-	Username  Username
-	FirstName string
-	LastName  string
-	Role      Role
+	ID       uuid.UUID `json:"id"`
+	Username Username  `json:"username"`
+	Role     Role      `json:"role"`
 }
 
 func (u User) IsValid() error {
@@ -70,8 +66,4 @@ func (r Role) IsValid() error {
 
 func (r Role) String() string {
 	return string(r)
-}
-
-func (r Role) HumanReadable() string {
-	return cases.Title(language.Und).String(r.String())
 }
