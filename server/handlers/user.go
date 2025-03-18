@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/evanebb/regauth/auth/local"
 	"github.com/evanebb/regauth/server/middleware"
 	"github.com/evanebb/regauth/server/response"
 	"github.com/evanebb/regauth/user"
@@ -155,5 +156,53 @@ func DeleteUser(l *slog.Logger, s user.Store) http.HandlerFunc {
 		}
 
 		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully deleted user")
+	}
+}
+
+type userPasswordChangeRequest struct {
+	Password string `json:"password"`
+}
+
+func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req userPasswordChangeRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			response.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body given")
+			return
+		}
+
+		u, ok := userFromContext(r.Context())
+		if !ok {
+			l.ErrorContext(r.Context(), "could not parse user from request context")
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		authUser, err := s.GetByID(r.Context(), u.ID)
+		if err != nil {
+			// this shouldn't ever happen currently, so just error
+			l.ErrorContext(r.Context(), "could not get auth user", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		if err := authUser.SetPassword(req.Password); err != nil {
+			if errors.Is(err, local.ErrWeakPassword) {
+				response.WriteJSONError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			l.ErrorContext(r.Context(), "could not set password", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		if err := s.Update(r.Context(), authUser); err != nil {
+			l.ErrorContext(r.Context(), "could not update auth user", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully updated password")
 	}
 }

@@ -107,8 +107,9 @@ func v1ApiRouter(
 		r.Get("/", handlers.ListUsers(logger, userStore))
 		r.Route("/{id}", func(r chi.Router) {
 			r.Use(handlers.UserParser(logger, userStore))
-			r.Get("/{id}", handlers.GetUser(logger))
-			r.Delete("/{id}", handlers.DeleteUser(logger, userStore))
+			r.Get("/", handlers.GetUser(logger))
+			r.Delete("/", handlers.DeleteUser(logger, userStore))
+			r.Post("/password", handlers.ChangeUserPassword(logger, authUserStore))
 		})
 	})
 
