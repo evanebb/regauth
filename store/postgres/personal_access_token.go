@@ -3,8 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
-	"fmt"
-	"github.com/evanebb/regauth/pat"
+	"github.com/evanebb/regauth/token"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,25 +11,25 @@ import (
 )
 
 type PersonalAccessTokenStore struct {
-	db *pgxpool.Pool
+	TransactionStore
 }
 
 func NewPersonalAccessTokenStore(db *pgxpool.Pool) PersonalAccessTokenStore {
-	return PersonalAccessTokenStore{db: db}
+	return PersonalAccessTokenStore{TransactionStore{db: db}}
 }
 
-func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid.UUID) ([]pat.PersonalAccessToken, error) {
-	var tokens []pat.PersonalAccessToken
+func (s PersonalAccessTokenStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]token.PersonalAccessToken, error) {
+	var tokens []token.PersonalAccessToken
 
 	query := "SELECT uuid, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE user_uuid = $1"
-	rows, err := s.db.Query(ctx, query, userID)
+	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
 	defer rows.Close()
 	if err != nil {
 		return tokens, err
 	}
 
 	for rows.Next() {
-		var t pat.PersonalAccessToken
+		var t token.PersonalAccessToken
 		var pt string
 
 		err = rows.Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
@@ -51,15 +50,15 @@ func (s PersonalAccessTokenStore) GetAllForUser(ctx context.Context, userID uuid
 	return tokens, nil
 }
 
-func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (pat.PersonalAccessToken, error) {
-	var t pat.PersonalAccessToken
+func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (token.PersonalAccessToken, error) {
+	var t token.PersonalAccessToken
 	var pt string
 
 	query := "SELECT uuid, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE uuid = $1"
-	err := s.db.QueryRow(ctx, query, id).Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return t, pat.ErrNotFound
+			return t, token.ErrNotFound
 		}
 
 		return t, err
@@ -69,18 +68,18 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (pa
 	return t, t.IsValid()
 }
 
-func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plainTextToken string) (pat.PersonalAccessToken, error) {
+func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plainTextToken string) (token.PersonalAccessToken, error) {
 	// Select all tokens of which the stored last eight characters match the plain-text token
 	lastEight := plainTextToken[len(plainTextToken)-8:]
 	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE last_eight = $1"
-	rows, err := s.db.Query(ctx, query, lastEight)
+	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, lastEight)
 	defer rows.Close()
 	if err != nil {
-		return pat.PersonalAccessToken{}, err
+		return token.PersonalAccessToken{}, err
 	}
 
 	for rows.Next() {
-		var t pat.PersonalAccessToken
+		var t token.PersonalAccessToken
 		var pt string
 		var hash []byte
 
@@ -103,15 +102,15 @@ func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plain
 		}
 	}
 
-	return pat.PersonalAccessToken{}, pat.ErrNotFound
+	return token.PersonalAccessToken{}, token.ErrNotFound
 }
 
-func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAccessToken, plainTextToken string) error {
+func (s PersonalAccessTokenStore) Create(ctx context.Context, t token.PersonalAccessToken, plainTextToken string) error {
 	_, err := s.GetByID(ctx, t.ID)
 	if err == nil {
-		return pat.ErrAlreadyExists
+		return token.ErrAlreadyExists
 	}
-	if !errors.Is(err, pat.ErrNotFound) {
+	if !errors.Is(err, token.ErrNotFound) {
 		return err
 	}
 
@@ -122,28 +121,28 @@ func (s PersonalAccessTokenStore) Create(ctx context.Context, t pat.PersonalAcce
 	}
 
 	query := "INSERT INTO personal_access_tokens (uuid, hash, last_eight ,description, permission, expiration_date, user_uuid) VALUES ($1, $2, $3, $4, $5, $6, $7)"
-	_, err = s.db.Exec(ctx, query, t.ID, hash, lastEight, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
+	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, t.ID, hash, lastEight, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
 	return err
 }
 
 func (s PersonalAccessTokenStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
 	query := "DELETE FROM personal_access_tokens WHERE uuid = $1"
-	_, err := s.db.Exec(ctx, query, id)
+	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, id)
 	return err
 }
 
-func (s PersonalAccessTokenStore) GetUsageLog(ctx context.Context, tokenID uuid.UUID) ([]pat.UsageLogEntry, error) {
-	var log []pat.UsageLogEntry
+func (s PersonalAccessTokenStore) GetUsageLog(ctx context.Context, tokenID uuid.UUID) ([]token.UsageLogEntry, error) {
+	var log []token.UsageLogEntry
 
 	query := "SELECT token_uuid, source_ip, timestamp FROM personal_access_tokens_usage_log WHERE token_uuid = $1 ORDER BY timestamp DESC"
-	rows, err := s.db.Query(ctx, query, tokenID)
+	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, tokenID)
 	defer rows.Close()
 	if err != nil {
 		return log, err
 	}
 
 	for rows.Next() {
-		var l pat.UsageLogEntry
+		var l token.UsageLogEntry
 
 		err = rows.Scan(&l.TokenID, &l.SourceIP, &l.Timestamp)
 		if err != nil {
@@ -156,20 +155,20 @@ func (s PersonalAccessTokenStore) GetUsageLog(ctx context.Context, tokenID uuid.
 	return log, nil
 }
 
-func (s PersonalAccessTokenStore) AddUsageLogEntry(ctx context.Context, e pat.UsageLogEntry) error {
+func (s PersonalAccessTokenStore) AddUsageLogEntry(ctx context.Context, e token.UsageLogEntry) error {
 	query := "INSERT INTO personal_access_tokens_usage_log (token_uuid, source_ip, timestamp) VALUES ($1, $2, $3)"
-	_, err := s.db.Exec(ctx, query, e.TokenID, e.SourceIP, e.Timestamp)
+	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, e.TokenID, e.SourceIP, e.Timestamp)
 	return err
 }
 
-var permissionFromDatabaseMap = map[string]pat.Permission{
-	"read_only":         pat.PermissionReadOnly,
-	"read_write":        pat.PermissionReadWrite,
-	"read_write_delete": pat.PermissionReadWriteDelete,
+var permissionFromDatabaseMap = map[string]token.Permission{
+	"read_only":         token.PermissionReadOnly,
+	"read_write":        token.PermissionReadWrite,
+	"read_write_delete": token.PermissionReadWriteDelete,
 }
 
-var permissionToDatabaseMap = map[pat.Permission]string{
-	pat.PermissionReadOnly:        "read_only",
-	pat.PermissionReadWrite:       "read_write",
-	pat.PermissionReadWriteDelete: "read_write_delete",
+var permissionToDatabaseMap = map[token.Permission]string{
+	token.PermissionReadOnly:        "read_only",
+	token.PermissionReadWrite:       "read_write",
+	token.PermissionReadWriteDelete: "read_write_delete",
 }
