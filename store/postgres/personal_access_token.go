@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"github.com/evanebb/regauth/token"
+	"github.com/evanebb/regauth/util/auth"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type PersonalAccessTokenStore struct {
@@ -95,9 +95,7 @@ func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plain
 			continue
 		}
 
-		// Verify whether the hash actually matches
-		err = bcrypt.CompareHashAndPassword(hash, []byte(plainTextToken))
-		if err == nil {
+		if err := auth.CompareTokenAndHash(plainTextToken, hash); err == nil {
 			return t, nil
 		}
 	}
@@ -115,10 +113,7 @@ func (s PersonalAccessTokenStore) Create(ctx context.Context, t token.PersonalAc
 	}
 
 	lastEight := plainTextToken[len(plainTextToken)-8:]
-	hash, err := bcrypt.GenerateFromPassword([]byte(plainTextToken), 12)
-	if err != nil {
-		return fmt.Errorf("failed to hash token: %w", err)
-	}
+	hash := auth.HashTokenWithRandomSalt(plainTextToken)
 
 	query := "INSERT INTO personal_access_tokens (uuid, hash, last_eight ,description, permission, expiration_date, user_uuid) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, t.ID, hash, lastEight, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
