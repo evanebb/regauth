@@ -3,19 +3,20 @@ package auth
 import (
 	"context"
 	"errors"
-	"github.com/evanebb/regauth/pat"
 	"github.com/evanebb/regauth/repository"
+	"github.com/evanebb/regauth/token"
+	"github.com/evanebb/regauth/user"
 	"log/slog"
 	"slices"
 	"strings"
 )
 
 type Authorizer interface {
-	AuthorizeAccess(ctx context.Context, p *pat.PersonalAccessToken, requestedAccess Access) (Access, error)
+	AuthorizeAccess(ctx context.Context, u *user.User, p *token.PersonalAccessToken, requestedAccess Access) (Access, error)
 }
 
-func NewAuthorizer(logger *slog.Logger, r repository.Store) Authorizer {
-	return authorizer{logger: logger, repoStore: r}
+func NewAuthorizer(logger *slog.Logger, repoStore repository.Store, teamStore user.TeamStore) Authorizer {
+	return authorizer{logger: logger, repoStore: repoStore, teamStore: teamStore}
 }
 
 type ResourceActions struct {
@@ -29,12 +30,27 @@ type Access []ResourceActions
 type authorizer struct {
 	logger    *slog.Logger
 	repoStore repository.Store
+	teamStore user.TeamStore
 }
 
-func (a authorizer) AuthorizeAccess(ctx context.Context, p *pat.PersonalAccessToken, requestedAccess Access) (Access, error) {
+func (a authorizer) AuthorizeAccess(ctx context.Context, u *user.User, p *token.PersonalAccessToken, requestedAccess Access) (Access, error) {
+	var authorizedNamespaces []string
+	if u != nil {
+		authorizedNamespaces = append(authorizedNamespaces, u.Username.String())
+
+		teams, err := a.teamStore.GetAllByUser(ctx, u.ID)
+		if err != nil {
+			return Access{}, err
+		}
+
+		for _, team := range teams {
+			authorizedNamespaces = append(authorizedNamespaces, team.Name)
+		}
+	}
+
 	grantedAccess := Access{}
 	for _, requestedActions := range requestedAccess {
-		grantedActions, err := a.authorizeResourceActions(ctx, p, requestedActions)
+		grantedActions, err := a.authorizeResourceActions(ctx, authorizedNamespaces, p, requestedActions)
 		if err != nil {
 			if errors.Is(err, ErrAccessNotGranted) {
 				continue
@@ -47,7 +63,12 @@ func (a authorizer) AuthorizeAccess(ctx context.Context, p *pat.PersonalAccessTo
 	return grantedAccess, nil
 }
 
-func (a authorizer) authorizeResourceActions(ctx context.Context, p *pat.PersonalAccessToken, r ResourceActions) (ResourceActions, error) {
+func (a authorizer) authorizeResourceActions(
+	ctx context.Context,
+	authorizedNamespaces []string,
+	p *token.PersonalAccessToken,
+	r ResourceActions,
+) (ResourceActions, error) {
 	var granted ResourceActions
 	if r.Type != "repository" {
 		// Only authorize access to repositories
@@ -74,9 +95,9 @@ func (a authorizer) authorizeResourceActions(ctx context.Context, p *pat.Persona
 
 	var allowedActions []string
 	// First, determine the actions that are allowed for the user
-	if p != nil && p.UserID == repo.OwnerID {
-		// If the user owns this repository, all actions are allowed
-		a.logger.Debug("user owns repository, all actions allowed", "repository", r.Name)
+	if slices.Contains(authorizedNamespaces, repo.Namespace) {
+		// the repository is in an authorized namespace, allow all actions
+		a.logger.Debug("repository is in authorized namespace, all actions allowed", "repository", r.Name)
 		allowedActions = []string{"pull", "push", "delete"}
 	} else if repo.Visibility == repository.VisibilityPublic {
 		// If the user does not own this repository but it is public, pull access is allowed
