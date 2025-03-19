@@ -33,7 +33,7 @@ func baseRouter(
 
 	// Note: if more extensive (and sensitive) information is ever added to the /health endpoint, it should listen on a
 	// separate port from the main server, so that clients cannot directly access it!
-	r.Handle("/health", handlers.Health())
+	r.Get("/health", handlers.Health())
 
 	r.Handle("/", http.RedirectHandler("/reference/", http.StatusMovedPermanently))
 	r.Handle("/reference", http.RedirectHandler("/reference/", http.StatusMovedPermanently))
