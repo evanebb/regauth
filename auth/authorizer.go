@@ -27,6 +27,17 @@ type ResourceActions struct {
 
 type Access []ResourceActions
 
+type AuthorizedNamespaces map[string]struct{}
+
+func (an AuthorizedNamespaces) Add(namespace string) {
+	an[namespace] = struct{}{}
+}
+
+func (an AuthorizedNamespaces) Contains(namespace string) bool {
+	_, ok := an[namespace]
+	return ok
+}
+
 type authorizer struct {
 	logger    *slog.Logger
 	repoStore repository.Store
@@ -34,9 +45,9 @@ type authorizer struct {
 }
 
 func (a authorizer) AuthorizeAccess(ctx context.Context, u *user.User, p *token.PersonalAccessToken, requestedAccess Access) (Access, error) {
-	var authorizedNamespaces []string
+	authorizedNamespaces := make(AuthorizedNamespaces)
 	if u != nil {
-		authorizedNamespaces = append(authorizedNamespaces, u.Username.String())
+		authorizedNamespaces.Add(u.Username.String())
 
 		teams, err := a.teamStore.GetAllByUser(ctx, u.ID)
 		if err != nil {
@@ -44,7 +55,7 @@ func (a authorizer) AuthorizeAccess(ctx context.Context, u *user.User, p *token.
 		}
 
 		for _, team := range teams {
-			authorizedNamespaces = append(authorizedNamespaces, team.Name)
+			authorizedNamespaces.Add(team.Name)
 		}
 	}
 
@@ -65,7 +76,7 @@ func (a authorizer) AuthorizeAccess(ctx context.Context, u *user.User, p *token.
 
 func (a authorizer) authorizeResourceActions(
 	ctx context.Context,
-	authorizedNamespaces []string,
+	authorizedNamespaces AuthorizedNamespaces,
 	p *token.PersonalAccessToken,
 	r ResourceActions,
 ) (ResourceActions, error) {
@@ -95,7 +106,7 @@ func (a authorizer) authorizeResourceActions(
 
 	var allowedActions []string
 	// First, determine the actions that are allowed for the user
-	if slices.Contains(authorizedNamespaces, repo.Namespace) {
+	if authorizedNamespaces.Contains(repo.Namespace) {
 		// the repository is in an authorized namespace, allow all actions
 		a.logger.Debug("repository is in authorized namespace, all actions allowed", "repository", r.Name)
 		allowedActions = []string{"pull", "push", "delete"}
