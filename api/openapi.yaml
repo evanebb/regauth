@@ -1,20 +1,22 @@
 openapi: 3.1.0
 info:
-  title: regauth API
-  description: regauth API
+  title: Regauth API
+  description: |
+    The Regauth API allows you to manage repositories, personal access tokens, teams and users.
+    
+    # Authentication
+    Authentication to the API is done through personal access tokens.
+    In order to authenticate, you have to supply your personal access token in the `Authorization` header using the `Bearer` type.
+    
+    The only exception to this is the `/v1/tokens` endpoint, which also allows you to use basic authentication with a username and password to create a new personal access token.
   version: 0.0.1
-servers:
-  - url: 'http://{server}/v1'
-    variables:
-      server:
-        default: localhost:8000
 tags:
   - name: Repositories
   - name: Personal access tokens
   - name: Teams
   - name: Users
 paths:
-  /repositories:
+  /v1/repositories:
     get:
       summary: List repositories
       tags: [Repositories]
@@ -61,7 +63,7 @@ paths:
                   message:
                     type: string
                     example: successfully created repository
-  /repositories/{namespace}/{name}:
+  /v1/repositories/{namespace}/{name}:
     get:
       summary: Get repository
       tags: [Repositories]
@@ -122,7 +124,7 @@ paths:
                   message:
                     type: string
                     example: successfully deleted repository
-  /repositories/{id}:
+  /v1/repositories/{id}:
     get:
       summary: Get repository
       tags: [Repositories]
@@ -175,7 +177,7 @@ paths:
                   message:
                     type: string
                     example: successfully deleted repository
-  /tokens:
+  /v1/tokens:
     get:
       summary: List personal access tokens
       tags: [Personal access tokens]
@@ -200,6 +202,9 @@ paths:
     post:
       summary: Create personal access token
       tags: [Personal access tokens]
+      security:
+        - personalAccessToken: []
+        - usernamePassword: []
       requestBody:
         required: true
         content:
@@ -222,7 +227,7 @@ paths:
                   message:
                     type: string
                     example: successfully created personal access token
-  /tokens/{id}:
+  /v1/tokens/{id}:
     get:
       summary: Get personal access token
       tags: [Repositories]
@@ -268,7 +273,7 @@ paths:
                   message:
                     type: string
                     example: successfully deleted personal access token
-  /teams:
+  /v1/teams:
     get:
       summary: List teams
       tags: [Teams]
@@ -315,7 +320,7 @@ paths:
                   message:
                     type: string
                     example: successfully created team
-  /teams/{id}:
+  /v1/teams/{id}:
     get:
       summary: Get teams
       tags: [Teams]
@@ -361,7 +366,7 @@ paths:
                   message:
                     type: string
                     example: successfully deleted team
-  /teams/{id}/members:
+  /v1/teams/{id}/members:
     get:
       summary: List team members
       tags: [Teams]
@@ -408,7 +413,7 @@ paths:
                   message:
                     type: string
                     example: successfully added team member
-  /teams/{id}/members/{userId}:
+  /v1/teams/{id}/members/{userId}:
     delete:
       summary: Remove team member
       tags: [Teams]
@@ -441,7 +446,7 @@ paths:
                   message:
                     type: string
                     example: successfully removed team member
-  /users:
+  /v1/users:
     get:
       summary: List users
       tags: [Users]
@@ -488,7 +493,7 @@ paths:
                   message:
                     type: string
                     example: successfully created user
-  /users/{id}:
+  /v1/users/{id}:
     get:
       summary: Get user
       tags: [Users]
@@ -534,7 +539,49 @@ paths:
                   message:
                     type: string
                     example: successfully deleted user
+  /v1/users/{id}/password:
+    post:
+      summary: Change password for user
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPasswordChangeRequest"
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Successfully updated password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: "null"
+                  message:
+                    type: string
+                    example: successfully updated password
+security:
+  - personalAccessToken: []
 components:
+  securitySchemes:
+    personalAccessToken:
+      type: http
+      scheme: bearer
+    usernamePassword:
+      type: http
+      scheme: basic
   schemas:
     RepositoryRequest:
       type: object
@@ -633,3 +680,9 @@ components:
             id:
               type: string
               format: uuid
+    UserPasswordChangeRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          example: newpassword

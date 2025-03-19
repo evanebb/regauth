@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/evanebb/regauth/api"
 	"github.com/evanebb/regauth/auth"
 	"github.com/evanebb/regauth/auth/local"
 	"github.com/evanebb/regauth/repository"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"log/slog"
+	"net/http"
 )
 
 func baseRouter(
@@ -32,6 +34,10 @@ func baseRouter(
 	// Note: if more extensive (and sensitive) information is ever added to the /health endpoint, it should listen on a
 	// separate port from the main server, so that clients cannot directly access it!
 	r.Handle("/health", handlers.Health())
+
+	r.Handle("/", http.RedirectHandler("/reference/", http.StatusMovedPermanently))
+	r.Handle("/reference", http.RedirectHandler("/reference/", http.StatusMovedPermanently))
+	r.Handle("/reference/*", http.StripPrefix("/reference/", http.FileServer(http.FS(api.Files))))
 
 	r.Handle("/token", handlers.GenerateRegistryToken(logger, authenticator, authorizer, accessTokenConfig))
 
