@@ -5,23 +5,12 @@ import (
 	"net/http"
 )
 
-type responseEnvelope struct {
-	Status  string `json:"status"`
-	Data    any    `json:"data"`
+type errorEnvelope struct {
 	Message string `json:"message"`
 }
 
-func WriteJSONSuccess(w http.ResponseWriter, statusCode int, v any, message string) {
-	WriteJSONResponse(w, statusCode, responseEnvelope{
-		Status:  "success",
-		Data:    v,
-		Message: message,
-	})
-}
-
 func WriteJSONError(w http.ResponseWriter, statusCode int, message string) {
-	WriteJSONResponse(w, statusCode, responseEnvelope{
-		Status:  "error",
+	WriteJSONResponse(w, statusCode, errorEnvelope{
 		Message: message,
 	})
 }

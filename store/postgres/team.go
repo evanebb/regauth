@@ -174,9 +174,9 @@ func (s TeamStore) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]user
 	return members, nil
 }
 
-func (s TeamStore) AddTeamMember(ctx context.Context, teamID uuid.UUID, userID uuid.UUID, role user.TeamMemberRole) error {
+func (s TeamStore) AddTeamMember(ctx context.Context, m user.TeamMember) error {
 	query := "INSERT INTO team_members (user_uuid, team_uuid, role) VALUES ($1, $2, $3)"
-	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, userID, teamID, role)
+	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, m.UserID, m.TeamID, m.Role)
 	return err
 }
 

@@ -24,6 +24,6 @@ type TeamStore interface {
 	DeleteByID(ctx context.Context, id uuid.UUID) error
 	GetTeamMember(ctx context.Context, teamID uuid.UUID, userID uuid.UUID) (TeamMember, error)
 	GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]TeamMember, error)
-	AddTeamMember(ctx context.Context, teamID uuid.UUID, userID uuid.UUID, role TeamMemberRole) error
+	AddTeamMember(ctx context.Context, m TeamMember) error
 	RemoveTeamMember(ctx context.Context, teamID uuid.UUID, userID uuid.UUID) error
 }

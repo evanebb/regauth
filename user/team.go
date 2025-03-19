@@ -17,6 +17,18 @@ type TeamMember struct {
 	Role     TeamMemberRole `json:"role"`
 }
 
+func (m TeamMember) IsValid() error {
+	if err := m.Username.IsValid(); err != nil {
+		return err
+	}
+
+	if err := m.Role.IsValid(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type TeamMemberRole string
 
 const (

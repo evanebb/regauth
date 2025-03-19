@@ -19,28 +19,19 @@ paths:
   /v1/repositories:
     get:
       summary: List repositories
-      tags: [Repositories]
+      tags: [ Repositories ]
       responses:
         200:
           description: Successfully listed repositories
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/RepositoryResponse"
-                  message:
-                    type: string
-                    example: successfully listed repositories
+                type: array
+                items:
+                  $ref: "#/components/schemas/RepositoryResponse"
     post:
       summary: Create repository
-      tags: [Repositories]
+      tags: [ Repositories ]
       requestBody:
         required: true
         content:
@@ -53,20 +44,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/RepositoryResponse"
-                  message:
-                    type: string
-                    example: successfully created repository
+                $ref: "#/components/schemas/RepositoryResponse"
   /v1/repositories/{namespace}/{name}:
     get:
       summary: Get repository
-      tags: [Repositories]
+      tags: [ Repositories ]
       parameters:
         - in: path
           required: true
@@ -84,19 +66,10 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/RepositoryResponse"
-                  message:
-                    type: string
-                    example: successfully returned repository
+                $ref: "#/components/schemas/RepositoryResponse"
     delete:
       summary: Delete repository
-      tags: [Repositories]
+      tags: [ Repositories ]
       parameters:
         - in: path
           required: true
@@ -109,25 +82,12 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        204:
           description: Successfully deleted repository
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: "null"
-                  message:
-                    type: string
-                    example: successfully deleted repository
   /v1/repositories/{id}:
     get:
       summary: Get repository
-      tags: [Repositories]
+      tags: [ Repositories ]
       parameters:
         - in: path
           required: true
@@ -141,19 +101,10 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/RepositoryResponse"
-                  message:
-                    type: string
-                    example: successfully returned repository
+                $ref: "#/components/schemas/RepositoryResponse"
     delete:
       summary: Delete repository
-      tags: [Repositories]
+      tags: [ Repositories ]
       parameters:
         - in: path
           required: true
@@ -162,49 +113,27 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        204:
           description: Successfully deleted repository
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: "null"
-                  message:
-                    type: string
-                    example: successfully deleted repository
   /v1/tokens:
     get:
       summary: List personal access tokens
-      tags: [Personal access tokens]
+      tags: [ Personal access tokens ]
       responses:
         200:
           description: Successfully listed personal access tokens
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/PersonalAccessTokenResponse"
-                  message:
-                    type: string
-                    example: successfully listed personal access tokens
+                type: array
+                items:
+                  $ref: "#/components/schemas/PersonalAccessTokenResponse"
     post:
       summary: Create personal access token
-      tags: [Personal access tokens]
+      tags: [ Personal access tokens ]
       security:
-        - personalAccessToken: []
-        - usernamePassword: []
+        - personalAccessToken: [ ]
+        - usernamePassword: [ ]
       requestBody:
         required: true
         content:
@@ -217,39 +146,21 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/PersonalAccessTokenCreationResponse"
-                  message:
-                    type: string
-                    example: successfully created personal access token
+                $ref: "#/components/schemas/PersonalAccessTokenCreationResponse"
   /v1/tokens/{id}:
     get:
       summary: Get personal access token
-      tags: [Repositories]
+      tags: [ Repositories ]
       responses:
         200:
           description: Successfully returned personal access token
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/PersonalAccessTokenResponse"
-                  message:
-                    type: string
-                    example: successfully returned personal access token
+                $ref: "#/components/schemas/PersonalAccessTokenResponse"
     delete:
       summary: Delete personal access token
-      tags: [Personal access tokens]
+      tags: [ Personal access tokens ]
       parameters:
         - in: path
           required: true
@@ -258,46 +169,24 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        204:
           description: Successfully deleted personal access token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: "null"
-                  message:
-                    type: string
-                    example: successfully deleted personal access token
   /v1/teams:
     get:
       summary: List teams
-      tags: [Teams]
+      tags: [ Teams ]
       responses:
         200:
           description: Successfully listed teams
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/TeamResponse"
-                  message:
-                    type: string
-                    example: successfully listed teams
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamResponse"
     post:
       summary: Create team
-      tags: [Teams]
+      tags: [ Teams ]
       requestBody:
         required: true
         content:
@@ -310,39 +199,21 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/TeamResponse"
-                  message:
-                    type: string
-                    example: successfully created team
+                $ref: "#/components/schemas/TeamResponse"
   /v1/teams/{id}:
     get:
-      summary: Get teams
-      tags: [Teams]
+      summary: Get team
+      tags: [ Teams ]
       responses:
         200:
           description: Successfully returned team
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/TeamResponse"
-                  message:
-                    type: string
-                    example: successfully returned team
+                $ref: "#/components/schemas/TeamResponse"
     delete:
       summary: Delete team
-      tags: [Teams]
+      tags: [ Teams ]
       parameters:
         - in: path
           required: true
@@ -351,46 +222,24 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        204:
           description: Successfully deleted team
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: "null"
-                  message:
-                    type: string
-                    example: successfully deleted team
   /v1/teams/{id}/members:
     get:
       summary: List team members
-      tags: [Teams]
+      tags: [ Teams ]
       responses:
         200:
           description: Successfully listed team members
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/TeamMemberResponse"
-                  message:
-                    type: string
-                    example: successfully listed team members
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamMemberResponse"
     post:
       summary: Add team member
-      tags: [Teams]
+      tags: [ Teams ]
       requestBody:
         required: true
         content:
@@ -403,20 +252,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/TeamMemberResponse"
-                  message:
-                    type: string
-                    example: successfully added team member
+                $ref: "#/components/schemas/TeamMemberResponse"
   /v1/teams/{id}/members/{userId}:
     delete:
       summary: Remove team member
-      tags: [Teams]
+      tags: [ Teams ]
       parameters:
         - in: path
           required: true
@@ -431,46 +271,24 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        204:
           description: Successfully removed team member
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: "null"
-                  message:
-                    type: string
-                    example: successfully removed team member
   /v1/users:
     get:
       summary: List users
-      tags: [Users]
+      tags: [ Users ]
       responses:
         200:
           description: Successfully listed users
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/UserResponse"
-                  message:
-                    type: string
-                    example: successfully listed users
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserResponse"
     post:
       summary: Create user
-      tags: [Users]
+      tags: [ Users ]
       requestBody:
         required: true
         content:
@@ -483,39 +301,21 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/UserResponse"
-                  message:
-                    type: string
-                    example: successfully created user
+                $ref: "#/components/schemas/UserResponse"
   /v1/users/{id}:
     get:
       summary: Get user
-      tags: [Users]
+      tags: [ Users ]
       responses:
         200:
           description: Successfully returned user
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    $ref: "#/components/schemas/UserResponse"
-                  message:
-                    type: string
-                    example: successfully returned user
+                $ref: "#/components/schemas/UserResponse"
     delete:
       summary: Delete user
-      tags: [Users]
+      tags: [ Users ]
       parameters:
         - in: path
           required: true
@@ -524,25 +324,12 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        204:
           description: Successfully deleted user
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: "null"
-                  message:
-                    type: string
-                    example: successfully deleted user
   /v1/users/{id}/password:
     post:
       summary: Change password for user
-      tags: [Users]
+      tags: [ Users ]
       requestBody:
         required: true
         content:
@@ -557,23 +344,10 @@ paths:
             type: string
             format: uuid
       responses:
-        200:
+        204:
           description: Successfully updated password
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: "null"
-                  message:
-                    type: string
-                    example: successfully updated password
 security:
-  - personalAccessToken: []
+  - personalAccessToken: [ ]
 components:
   securitySchemes:
     personalAccessToken:
@@ -594,7 +368,7 @@ components:
           example: myimage
         visibility:
           type: string
-          enum: ["private", "public"]
+          enum: [ "private", "public" ]
     RepositoryResponse:
       allOf:
         - $ref: "#/components/schemas/RepositoryRequest"
@@ -611,7 +385,7 @@ components:
           example: My personal access token
         permission:
           type: string
-          enum: ["readOnly", "readWrite", "readWriteDelete"]
+          enum: [ "readOnly", "readWrite", "readWriteDelete" ]
         expirationDate:
           type: string
           format: date-time
@@ -654,7 +428,7 @@ components:
           example: myuser
         role:
           type: string
-          enum: ["admin", "user"]
+          enum: [ "admin", "user" ]
     TeamMemberResponse:
       allOf:
         - $ref: "#/components/schemas/TeamMemberRequest"
@@ -671,7 +445,7 @@ components:
           example: myuser
         role:
           type: string
-          enum: ["admin", "user"]
+          enum: [ "admin", "user" ]
     UserResponse:
       allOf:
         - $ref: "#/components/schemas/UserRequest"

@@ -110,7 +110,7 @@ func CreateUser(l *slog.Logger, s user.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, newUser, "successfully created user")
+		response.WriteJSONResponse(w, http.StatusOK, newUser)
 	}
 }
 
@@ -123,7 +123,7 @@ func ListUsers(l *slog.Logger, s user.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, users, "successfully listed users")
+		response.WriteJSONResponse(w, http.StatusOK, users)
 	}
 }
 
@@ -136,7 +136,7 @@ func GetUser(l *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, u, "successfully returned user")
+		response.WriteJSONResponse(w, http.StatusOK, u)
 	}
 }
 
@@ -167,7 +167,7 @@ func DeleteUser(l *slog.Logger, s user.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully deleted user")
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -215,6 +215,6 @@ func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc 
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully updated password")
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

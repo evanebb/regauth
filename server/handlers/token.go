@@ -108,7 +108,7 @@ func CreateToken(l *slog.Logger, s token.Store) http.HandlerFunc {
 		}
 
 		resp := tokenCreationResponse{PersonalAccessToken: pat, Token: plainTextToken}
-		response.WriteJSONSuccess(w, http.StatusOK, resp, "successfully created token")
+		response.WriteJSONResponse(w, http.StatusOK, resp)
 	}
 }
 
@@ -128,7 +128,7 @@ func ListTokens(l *slog.Logger, s token.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, tokens, "successfully listed tokens")
+		response.WriteJSONResponse(w, http.StatusOK, tokens)
 	}
 }
 
@@ -141,7 +141,7 @@ func GetToken(l *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, pat, "successfully returned personal access token")
+		response.WriteJSONResponse(w, http.StatusOK, pat)
 	}
 }
 
@@ -160,6 +160,6 @@ func DeleteToken(l *slog.Logger, s token.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully deleted personal access token")
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

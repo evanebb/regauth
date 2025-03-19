@@ -156,7 +156,7 @@ func CreateRepository(l *slog.Logger, repoStore repository.Store, teamStore user
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, repo, "successfully created repository")
+		response.WriteJSONResponse(w, http.StatusOK, repo)
 	}
 }
 
@@ -176,7 +176,7 @@ func ListRepositories(l *slog.Logger, s repository.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, repos, "successfully listed repositories")
+		response.WriteJSONResponse(w, http.StatusOK, repos)
 	}
 }
 
@@ -189,7 +189,7 @@ func GetRepository(l *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, repo, "successfully returned repository")
+		response.WriteJSONResponse(w, http.StatusOK, repo)
 	}
 }
 
@@ -208,6 +208,6 @@ func DeleteRepository(l *slog.Logger, s repository.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully deleted repository")
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

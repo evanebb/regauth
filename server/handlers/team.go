@@ -118,13 +118,24 @@ func CreateTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 
 		team.ID = uuid.New()
 
+		member := user.TeamMember{
+			UserID:   u.ID,
+			TeamID:   team.ID,
+			Username: u.Username,
+			Role:     user.TeamMemberRoleAdmin,
+		}
+		if err := member.IsValid(); err != nil {
+			// shouldn't ever happen, just check it anyway
+			response.WriteJSONError(w, http.StatusBadRequest, err.Error())
+		}
+
 		err = s.Tx(r.Context(), func(ctx context.Context) error {
 			if err := s.Create(ctx, team); err != nil {
 				return err
 			}
 
 			// add the current user as an admin to the team
-			if err := s.AddTeamMember(ctx, team.ID, u.ID, user.TeamMemberRoleAdmin); err != nil {
+			if err := s.AddTeamMember(ctx, member); err != nil {
 				return err
 			}
 
@@ -137,7 +148,7 @@ func CreateTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, team, "successfully created team")
+		response.WriteJSONResponse(w, http.StatusOK, team)
 	}
 }
 
@@ -157,7 +168,7 @@ func ListTeams(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, teams, "successfully listed teams")
+		response.WriteJSONResponse(w, http.StatusOK, teams)
 	}
 }
 
@@ -170,7 +181,7 @@ func GetTeam(l *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, team, "successfully returned team")
+		response.WriteJSONResponse(w, http.StatusOK, team)
 	}
 }
 
@@ -189,7 +200,7 @@ func DeleteTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully deleted team")
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -224,17 +235,22 @@ func AddTeamMember(l *slog.Logger, teamStore user.TeamStore, userStore user.Stor
 			return
 		}
 
-		role := user.TeamMemberRole(req.Role)
-		if err := role.IsValid(); err != nil {
+		member := user.TeamMember{
+			UserID:   userToAdd.ID,
+			TeamID:   currentMember.TeamID,
+			Username: userToAdd.Username,
+			Role:     user.TeamMemberRole(req.Role),
+		}
+		if err := member.IsValid(); err != nil {
 			response.WriteJSONError(w, http.StatusBadRequest, err.Error())
 		}
 
-		if err := teamStore.AddTeamMember(r.Context(), currentMember.TeamID, userToAdd.ID, role); err != nil {
+		if err := teamStore.AddTeamMember(r.Context(), member); err != nil {
 			l.ErrorContext(r.Context(), "could not add team member", slog.Any("error", err))
 			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully added team member")
+		response.WriteJSONResponse(w, http.StatusOK, member)
 	}
 }
 
@@ -254,7 +270,7 @@ func ListTeamMembers(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, members, "successfully listed team members")
+		response.WriteJSONResponse(w, http.StatusOK, members)
 	}
 }
 
@@ -284,6 +300,6 @@ func RemoveTeamMember(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONSuccess(w, http.StatusOK, nil, "successfully removed team member")
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
