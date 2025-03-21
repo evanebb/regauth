@@ -91,7 +91,7 @@ func newCreateTeamCommand(client *oas.Client) *cobra.Command {
 		Use: "create",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			team, err := client.CreateTeam(context.Background(), &oas.TeamRequest{
-				Name: viper.GetString("name"),
+				Name: name,
 			})
 			if err != nil {
 				fmt.Println(err)
