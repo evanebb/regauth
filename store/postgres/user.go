@@ -92,7 +92,7 @@ func (s UserStore) Create(ctx context.Context, u user.User) error {
 		return err
 	}
 
-	query := "INSERT INTO users (uuid, lastname, role) VALUES ($1, $2, $3, $4, $5)"
+	query := "INSERT INTO users (uuid, username, role) VALUES ($1, $2, $3)"
 	if _, err = tx.Exec(ctx, query, u.ID, u.Username, u.Role); err != nil {
 		_ = tx.Rollback(ctx)
 		return err
