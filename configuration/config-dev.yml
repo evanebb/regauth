@@ -2,10 +2,6 @@ log:
   level: debug
   format: text
 
-http:
-  # This should be set to a secure, randomly generated value in production!
-  sessionKey: thisisaverysecretkey
-
 database:
   host: localhost
   name: regauth

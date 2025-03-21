@@ -2,62 +2,73 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/evanebb/regauth/httputil"
 	"github.com/evanebb/regauth/repository"
-	"github.com/evanebb/regauth/session"
-	"github.com/evanebb/regauth/template"
+	"github.com/evanebb/regauth/server/middleware"
+	"github.com/evanebb/regauth/server/response"
+	"github.com/evanebb/regauth/user"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 	"log/slog"
 	"net/http"
-	"strings"
 )
 
 type repositoryCtxKey struct{}
 
-// RepositoryParser is a middleware that will look up the requested repository from the ID in the path, checks if it
-// belongs to the user and sets it in the request context.
-func RepositoryParser(l *slog.Logger, t template.Templater, repoStore repository.Store) func(next http.Handler) http.Handler {
+func RepositoryParser(l *slog.Logger, repoStore repository.Store, teamStore user.TeamStore) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			u, ok := httputil.LoggedInUserFromContext(r.Context())
+			u, ok := middleware.AuthenticatedUserFromContext(r.Context())
 			if !ok {
-				l.Error("no user in request context")
-				t.RenderBase(w, r, nil, "errors/500.gohtml")
+				l.ErrorContext(r.Context(), "could not parse user from request context")
+				response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
 				return
 			}
 
-			id, err := getUUIDFromRequest(r)
-			if err != nil {
-				l.Debug("could not get UUID from request", "error", err)
-				t.RenderBase(w, r, nil, "errors/404.gohtml")
+			namespace, name := chi.URLParam(r, "namespace"), chi.URLParam(r, "name")
+			if namespace == "" || name == "" {
+				response.WriteJSONError(w, http.StatusBadRequest, "no repository namespace or name given")
 				return
 			}
 
-			repo, err := repoStore.GetByID(r.Context(), id)
+			repo, err := repoStore.GetByNamespaceAndName(r.Context(), namespace, name)
 			if err != nil {
 				if errors.Is(err, repository.ErrNotFound) {
-					l.Debug("repository not found", "error", err, "repositoryId", id)
-					t.RenderBase(w, r, nil, "errors/404.gohtml")
+					response.WriteJSONError(w, http.StatusNotFound, "repository not found")
 					return
 				}
 
-				l.Error("failed to get repository", "error", err, "repositoryId", id)
-				t.RenderBase(w, r, nil, "errors/500.gohtml")
+				l.ErrorContext(r.Context(), "could not get repository", slog.Any("error", err))
+				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 				return
 			}
 
-			if repo.OwnerID != u.ID {
-				l.Debug("repo does not belong to user", "repositoryId", repo.ID, "userId", u.ID)
-				t.RenderBase(w, r, nil, "errors/404.gohtml")
+			teams, err := teamStore.GetAllByUser(r.Context(), u.ID)
+			if err != nil {
+				l.ErrorContext(r.Context(), "failed to get teams for user", slog.Any("error", err))
+				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+				return
+			}
+
+			authorized := false
+			for _, team := range teams {
+				if repo.Namespace == team.Name {
+					authorized = true
+				}
+			}
+
+			if repo.Namespace == u.Username.String() {
+				authorized = true
+			}
+
+			if !authorized {
+				response.WriteJSONError(w, http.StatusForbidden, "not authorized for given namespace")
 				return
 			}
 
 			ctx := withRepository(r.Context(), repo)
-			r = r.WithContext(ctx)
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 		return http.HandlerFunc(fn)
 	}
@@ -70,172 +81,127 @@ func withRepository(ctx context.Context, r repository.Repository) context.Contex
 }
 
 // repositoryFromContext parses the current repository.Repository from the given request context.
-// This requires the repository to have been previously set in the context, for example by RepositoryParser.
+// This requires the repository to have been previously set in the context, for example by the RepositoryParser middleware.
 func repositoryFromContext(ctx context.Context) (repository.Repository, bool) {
 	val, ok := ctx.Value(repositoryCtxKey{}).(repository.Repository)
 	return val, ok
 }
 
-func Explore(l *slog.Logger, t template.Templater, s repository.Store) http.HandlerFunc {
+func CreateRepository(l *slog.Logger, repoStore repository.Store, teamStore user.TeamStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repositories, err := s.GetAllPublic(r.Context())
-		if err != nil {
-			l.Error("failed to get public repositories", "error", err)
-			t.Render(w, r, nil, "errors/500.gohtml")
-		}
-
-		repositories = filterRepositoriesByName(repositories, r.URL.Query().Get("q"))
-		paginated := PaginateRequest(r, repositories, 10)
-
-		if shouldRenderPartials(r) {
-			t.Render(w, r, paginated, "partial", "explore.partial.gohtml")
-		} else {
-			t.RenderBase(w, r, paginated, "explore.gohtml", "explore.partial.gohtml")
-		}
-	}
-}
-
-func UserRepositoryOverview(l *slog.Logger, t template.Templater, s repository.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := httputil.LoggedInUserFromContext(r.Context())
+		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
 		if !ok {
-			l.Error("no user in request context")
-			t.Render(w, r, nil, "errors/500.gohtml")
+			l.ErrorContext(r.Context(), "could not parse user from request context")
+			response.WriteJSONError(w, http.StatusUnauthorized, "authenticated failed")
 			return
 		}
 
-		repositories, err := s.GetAllByOwner(r.Context(), u.ID)
-		if err != nil {
-			l.Error("failed to get repositories for user", "error", err)
-			t.Render(w, r, nil, "errors/500.gohtml")
+		var repo repository.Repository
+		if err := json.NewDecoder(r.Body).Decode(&repo); err != nil {
+			response.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body given")
 			return
 		}
 
-		repositories = filterRepositoriesByName(repositories, r.URL.Query().Get("q"))
-		paginated := PaginateRequest(r, repositories, 10)
-
-		if shouldRenderPartials(r) {
-			t.Render(w, r, paginated, "partial", "repositories/overview.partial.gohtml")
-		} else {
-			t.RenderBase(w, r, paginated, "repositories/overview.gohtml", "repositories/overview.partial.gohtml")
-		}
-	}
-}
-
-func filterRepositoriesByName(r []repository.Repository, name string) []repository.Repository {
-	if name == "" {
-		return r
-	}
-
-	var filtered []repository.Repository
-	for _, repo := range r {
-		fullName := repo.Namespace + "/" + repo.Name.String()
-		if strings.Contains(fullName, name) {
-			filtered = append(filtered, repo)
-		}
-	}
-
-	return filtered
-}
-
-func CreateRepositoryPage(l *slog.Logger, t template.Templater) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := httputil.LoggedInUserFromContext(r.Context())
-		if !ok {
-			l.Error("no user in request context")
-			t.Render(w, r, nil, "errors/500.gohtml")
+		teams, err := teamStore.GetAllByUser(r.Context(), u.ID)
+		if err != nil {
+			l.ErrorContext(r.Context(), "failed to get teams for user", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
 		}
 
-		data := struct {
-			Namespace string
-		}{
-			u.Username.String(),
-		}
-
-		t.RenderBase(w, r, data, "repositories/create.gohtml")
-	}
-}
-
-func CreateRepository(l *slog.Logger, t template.Templater, repoStore repository.Store, sessionStore sessions.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		s, _ := sessionStore.Get(r, "session")
-		defer func() {
-			if err := s.Save(r, w); err != nil {
-				l.Error("failed to save session", "error", err)
+		authorized := false
+		for _, team := range teams {
+			if repo.Namespace == team.Name {
+				authorized = true
 			}
-		}()
+		}
 
-		u, ok := httputil.LoggedInUserFromContext(r.Context())
-		if !ok {
-			l.Error("no user in request context")
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
+		if repo.Namespace == u.Username.String() {
+			authorized = true
+		}
+
+		if !authorized {
+			response.WriteJSONError(w, http.StatusForbidden, "not authorized to create repository in given namespace")
 			return
 		}
 
-		repo := repository.Repository{
-			ID:         uuid.New(),
-			Namespace:  u.Username.String(),
-			Name:       repository.Name(r.PostFormValue("name")),
-			Visibility: repository.Visibility(r.PostFormValue("visibility")),
-			OwnerID:    u.ID,
-		}
-
-		err := repo.IsValid()
-		if err != nil {
-			l.Debug("invalid repository given", "error", err)
-			s.AddFlash(session.NewFlash(session.FlashTypeError, fmt.Sprintf("Invalid repository: %s", err)))
-			t.RenderBase(w, r, nil, "repositories/create.gohtml")
+		_, err = repoStore.GetByNamespaceAndName(r.Context(), repo.Namespace, repo.Name.String())
+		if err == nil {
+			response.WriteJSONError(w, http.StatusBadRequest, "repository already exists")
 			return
 		}
 
-		err = repoStore.Create(r.Context(), repo)
-		if err != nil {
-			l.Error("failed to create repository", "error", err)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
+		if !errors.Is(err, repository.ErrNotFound) {
+			l.Error("could not get repository", "error", err)
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
-		http.Redirect(w, r, "/ui/repositories/"+repo.ID.String(), http.StatusFound)
+		repo.ID = uuid.New()
+
+		if err := repo.IsValid(); err != nil {
+			response.WriteJSONError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if err := repoStore.Create(r.Context(), repo); err != nil {
+			l.Error("could not create repository", "error", err)
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		response.WriteJSONResponse(w, http.StatusOK, repo)
 	}
 }
 
-func ViewRepository(l *slog.Logger, t template.Templater) http.HandlerFunc {
+func ListRepositories(l *slog.Logger, s repository.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
+		if !ok {
+			l.ErrorContext(r.Context(), "could not parse user from request context")
+			response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
+			return
+		}
+
+		repos, err := s.GetAllByUser(r.Context(), u.ID)
+		if err != nil {
+			l.ErrorContext(r.Context(), "could not get repositories for user", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		response.WriteJSONResponse(w, http.StatusOK, repos)
+	}
+}
+
+func GetRepository(l *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		repo, ok := repositoryFromContext(r.Context())
 		if !ok {
-			l.Error("no repository in request context")
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
+			l.ErrorContext(r.Context(), "could not parse repository from request context")
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
-		t.RenderBase(w, r, repo, "repositories/view.gohtml")
+		response.WriteJSONResponse(w, http.StatusOK, repo)
 	}
 }
 
-func DeleteRepository(l *slog.Logger, t template.Templater, repoStore repository.Store, sessionStore sessions.Store) http.HandlerFunc {
+func DeleteRepository(l *slog.Logger, s repository.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s, _ := sessionStore.Get(r, "session")
-		defer func() {
-			if err := s.Save(r, w); err != nil {
-				l.Error("failed to save session", "error", err)
-			}
-		}()
-
 		repo, ok := repositoryFromContext(r.Context())
 		if !ok {
-			l.Error("no repository in request context")
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
+			l.ErrorContext(r.Context(), "could not parse repository from request context")
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
-		err := repoStore.DeleteByID(r.Context(), repo.ID)
-		if err != nil {
-			l.Error("failed to delete repository", "error", err, "repositoryId", repo.ID)
-			t.RenderBase(w, r, nil, "errors/500.gohtml")
+		if err := s.DeleteByID(r.Context(), repo.ID); err != nil {
+			l.ErrorContext(r.Context(), "could not delete repository", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
-		s.AddFlash(session.NewFlash(session.FlashTypeSuccess, "Successfully deleted repository!"))
-		http.Redirect(w, r, "/ui/repositories", http.StatusFound)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

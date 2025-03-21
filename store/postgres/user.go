@@ -10,18 +10,18 @@ import (
 )
 
 type UserStore struct {
-	db *pgxpool.Pool
+	TransactionStore
 }
 
 func NewUserStore(db *pgxpool.Pool) UserStore {
-	return UserStore{db: db}
+	return UserStore{TransactionStore{db: db}}
 }
 
 func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 	var users []user.User
 
-	query := "SELECT uuid, username, firstname, lastname, role FROM users"
-	rows, err := s.db.Query(ctx, query)
+	query := "SELECT uuid, username, role FROM users"
+	rows, err := s.QuerierFromContext(ctx).Query(ctx, query)
 	defer rows.Close()
 	if err != nil {
 		return users, err
@@ -30,7 +30,7 @@ func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 	for rows.Next() {
 		var u user.User
 
-		err = rows.Scan(&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Role)
+		err = rows.Scan(&u.ID, &u.Username, &u.Role)
 		if err != nil {
 			return users, err
 		}
@@ -49,8 +49,8 @@ func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 func (s UserStore) GetByID(ctx context.Context, id uuid.UUID) (user.User, error) {
 	var u user.User
 
-	query := "SELECT uuid, username, firstname, lastname, role FROM users WHERE uuid = $1"
-	err := s.db.QueryRow(ctx, query, id).Scan(&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Role)
+	query := "SELECT uuid, username, role FROM users WHERE uuid = $1"
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&u.ID, &u.Username, &u.Role)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return u, user.ErrNotFound
@@ -65,8 +65,8 @@ func (s UserStore) GetByID(ctx context.Context, id uuid.UUID) (user.User, error)
 func (s UserStore) GetByUsername(ctx context.Context, username string) (user.User, error) {
 	var u user.User
 
-	query := "SELECT uuid, username, firstname, lastname, role FROM users WHERE username = $1"
-	err := s.db.QueryRow(ctx, query, username).Scan(&u.ID, &u.Username, &u.FirstName, &u.LastName, &u.Role)
+	query := "SELECT uuid, username, role FROM users WHERE username = $1"
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, username).Scan(&u.ID, &u.Username, &u.Role)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return u, user.ErrNotFound
@@ -87,13 +87,29 @@ func (s UserStore) Create(ctx context.Context, u user.User) error {
 		return err
 	}
 
-	query := "INSERT INTO users (uuid, username, firstname, lastname, role) VALUES ($1, $2, $3, $4, $5)"
-	_, err = s.db.Exec(ctx, query, u.ID, u.Username, u.FirstName, u.LastName, u.Role)
-	return err
+	tx, err := s.QuerierFromContext(ctx).Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	query := "INSERT INTO users (uuid, username, role) VALUES ($1, $2, $3)"
+	if _, err = tx.Exec(ctx, query, u.ID, u.Username, u.Role); err != nil {
+		_ = tx.Rollback(ctx)
+		return err
+	}
+
+	nsQuery := "INSERT INTO namespaces (uuid, name, user_uuid) VALUES ($1, $2, $3)"
+	if _, err := tx.Exec(ctx, nsQuery, uuid.New(), u.Username, u.ID); err != nil {
+		_ = tx.Rollback(ctx)
+		return err
+	}
+
+	_ = tx.Commit(ctx)
+	return nil
 }
 
 func (s UserStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
 	query := "DELETE FROM users WHERE uuid = $1"
-	_, err := s.db.Exec(ctx, query, id)
+	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, id)
 	return err
 }

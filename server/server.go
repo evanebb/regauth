@@ -4,21 +4,16 @@ import (
 	"context"
 	"crypto"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"github.com/evanebb/regauth/auth"
 	"github.com/evanebb/regauth/configuration"
 	"github.com/evanebb/regauth/resources/database"
-	"github.com/evanebb/regauth/resources/templates"
-	"github.com/evanebb/regauth/session"
 	"github.com/evanebb/regauth/store/postgres"
-	"github.com/evanebb/regauth/template"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-jose/go-jose/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/pressly/goose/v3"
 	"io"
 	"log/slog"
@@ -56,36 +51,20 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	}
 
 	repoStore := postgres.NewRepositoryStore(db)
-	patStore := postgres.NewPersonalAccessTokenStore(db)
 	userStore := postgres.NewUserStore(db)
+	teamStore := postgres.NewTeamStore(db)
+	tokenStore := postgres.NewPersonalAccessTokenStore(db)
 	authUserStore := postgres.NewAuthUserStore(db)
-	sessionStore := session.NewPgxStore(db, []byte(conf.HTTP.SessionKey))
 
-	authenticator := auth.NewAuthenticator(patStore, userStore)
-	authorizer := auth.NewAuthorizer(logger, repoStore)
+	authenticator := auth.NewAuthenticator(tokenStore, userStore)
+	authorizer := auth.NewAuthorizer(logger, repoStore, teamStore)
 
-	templater := template.NewTemplater(logger, templates.Files, sessionStore)
-
-	certificate, err := loadCertificate(conf.Token.Certificate)
+	accessTokenConfig, err := buildAccessTokenConfiguration(conf)
 	if err != nil {
 		return err
 	}
 
-	privateKey, err := loadPrivateKey(conf.Token.Key)
-	if err != nil {
-		return err
-	}
-
-	signer, err := jose.NewSigner(
-		jose.SigningKey{Algorithm: jose.SignatureAlgorithm(conf.Token.Alg), Key: privateKey},
-		(&jose.SignerOptions{}).WithHeader("x5c", []string{base64.StdEncoding.EncodeToString(certificate.Raw)}),
-	)
-	if err != nil {
-		return fmt.Errorf("could not create signer: %w", err)
-	}
-
-	router := chi.NewRouter()
-	addRoutes(router, logger, sessionStore, templater, repoStore, userStore, patStore, authUserStore, authenticator, authorizer, conf.Token.Issuer, conf.Token.Service, signer, conf.Registry.Host)
+	router := baseRouter(logger, repoStore, userStore, teamStore, tokenStore, authUserStore, authenticator, authorizer, accessTokenConfig)
 
 	server := &http.Server{
 		Addr:    conf.HTTP.Addr,
@@ -145,6 +124,31 @@ func buildLogger(conf *configuration.Configuration) (*slog.Logger, error) {
 	}
 
 	return slog.New(handler), nil
+}
+
+func buildAccessTokenConfiguration(conf *configuration.Configuration) (auth.AccessTokenConfiguration, error) {
+	var a auth.AccessTokenConfiguration
+	var err error
+
+	a.SigningCert, err = loadCertificate(conf.Token.Certificate)
+	if err != nil {
+		return auth.AccessTokenConfiguration{}, err
+	}
+
+	a.SigningKey, err = loadPrivateKey(conf.Token.Key)
+	if err != nil {
+		return auth.AccessTokenConfiguration{}, err
+	}
+
+	a.VerificationKey = a.SigningKey.(interface {
+		Public() crypto.PublicKey
+	}).Public()
+
+	a.SigningAlg = jwa.SignatureAlgorithm(conf.Token.Alg)
+	a.Issuer = conf.Token.Issuer
+	a.Service = conf.Token.Service
+
+	return a, nil
 }
 
 func loadCertificate(path string) (*x509.Certificate, error) {

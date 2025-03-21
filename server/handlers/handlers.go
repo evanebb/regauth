@@ -1,18 +1,10 @@
 package handlers
 
 import (
-	"github.com/evanebb/regauth/template"
+	"github.com/evanebb/regauth/server/response"
 	"net/http"
 )
 
-func Index(t template.Templater) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.RenderBase(w, r, nil, "home.gohtml")
-	}
-}
-
-func NotFound(t template.Templater) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		t.RenderBase(w, r, nil, "errors/404.gohtml")
-	}
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	response.WriteJSONError(w, http.StatusNotFound, "requested endpoint does not exist, please refer to the API documentation")
 }

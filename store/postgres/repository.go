@@ -10,18 +10,33 @@ import (
 )
 
 type RepositoryStore struct {
-	db *pgxpool.Pool
+	TransactionStore
 }
 
 func NewRepositoryStore(db *pgxpool.Pool) RepositoryStore {
-	return RepositoryStore{db: db}
+	return RepositoryStore{TransactionStore{db: db}}
 }
 
-func (s RepositoryStore) GetAllByOwner(ctx context.Context, ownerId uuid.UUID) ([]repository.Repository, error) {
+func (s RepositoryStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]repository.Repository, error) {
 	var repositories []repository.Repository
 
-	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE owner_uuid = $1"
-	rows, err := s.db.Query(ctx, query, ownerId)
+	query := `
+		SELECT
+			repositories.uuid,
+			namespaces.name as namespace,
+			repositories.name,
+			repositories.visibility
+		FROM repositories
+		JOIN namespaces ON repositories.namespace = namespaces.uuid
+		WHERE namespaces.user_uuid = $1
+		OR namespaces.team_uuid IN (
+			SELECT uuid
+			FROM teams
+			JOIN team_members ON teams.uuid = team_members.team_uuid
+			WHERE team_members.user_uuid = $1
+		)
+		`
+	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
 	defer rows.Close()
 	if err != nil {
 		return repositories, err
@@ -30,36 +45,7 @@ func (s RepositoryStore) GetAllByOwner(ctx context.Context, ownerId uuid.UUID) (
 	for rows.Next() {
 		var r repository.Repository
 
-		err = rows.Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.OwnerID)
-		if err != nil {
-			return repositories, err
-		}
-
-		err = r.IsValid()
-		if err != nil {
-			return repositories, err
-		}
-
-		repositories = append(repositories, r)
-	}
-
-	return repositories, nil
-}
-
-func (s RepositoryStore) GetAllPublic(ctx context.Context) ([]repository.Repository, error) {
-	var repositories []repository.Repository
-
-	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE visibility = 'public'"
-	rows, err := s.db.Query(ctx, query)
-	defer rows.Close()
-	if err != nil {
-		return repositories, err
-	}
-
-	for rows.Next() {
-		var r repository.Repository
-
-		err = rows.Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.OwnerID)
+		err = rows.Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
 		if err != nil {
 			return repositories, err
 		}
@@ -78,8 +64,17 @@ func (s RepositoryStore) GetAllPublic(ctx context.Context) ([]repository.Reposit
 func (s RepositoryStore) GetByNamespaceAndName(ctx context.Context, namespace string, name string) (repository.Repository, error) {
 	var r repository.Repository
 
-	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE namespace = $1 AND name = $2"
-	err := s.db.QueryRow(ctx, query, namespace, name).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.OwnerID)
+	query := `
+		SELECT
+			repositories.uuid,
+			namespaces.name as namespace,
+			repositories.name,
+			repositories.visibility
+		FROM repositories
+		JOIN namespaces ON repositories.namespace = namespaces.uuid
+		WHERE namespaces.name = $1 AND repositories.name = $2
+		`
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, namespace, name).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return r, repository.ErrNotFound
@@ -94,8 +89,17 @@ func (s RepositoryStore) GetByNamespaceAndName(ctx context.Context, namespace st
 func (s RepositoryStore) GetByID(ctx context.Context, id uuid.UUID) (repository.Repository, error) {
 	var r repository.Repository
 
-	query := "SELECT uuid, namespace, name, visibility, owner_uuid FROM repositories WHERE uuid = $1"
-	err := s.db.QueryRow(ctx, query, id).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.OwnerID)
+	query := `
+		SELECT
+			repositories.uuid,
+			namespaces.name as namespace,
+			repositories.name,
+			repositories.visibility
+		FROM repositories
+		JOIN namespaces ON repositories.namespace = namespaces.uuid
+		WHERE repositories.uuid = $1
+		`
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return r, repository.ErrNotFound
@@ -116,24 +120,19 @@ func (s RepositoryStore) Create(ctx context.Context, r repository.Repository) er
 		return err
 	}
 
-	query := "INSERT INTO repositories (uuid, namespace, name, visibility, owner_uuid) VALUES ($1, $2, $3, $4, $5)"
-	_, err = s.db.Exec(ctx, query, r.ID, r.Namespace, r.Name, r.Visibility, r.OwnerID)
-	return err
-}
+	query := `
+		INSERT INTO repositories (uuid, namespace, name, visibility)
+		SELECT $1, uuid, $2, $3
+		FROM namespaces
+		WHERE name = $4
+		`
 
-func (s RepositoryStore) Update(ctx context.Context, r repository.Repository) error {
-	_, err := s.GetByID(ctx, r.ID)
-	if err != nil {
-		return err
-	}
-
-	query := "UPDATE repositories SET namespace = $1, name = $2, visibility = $3, owner_uuid = $4 WHERE uuid = $5"
-	_, err = s.db.Exec(ctx, query, r.Namespace, r.Name, r.Visibility, r.OwnerID, r.ID)
+	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, r.ID, r.Name, r.Visibility, r.Namespace)
 	return err
 }
 
 func (s RepositoryStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
 	query := "DELETE FROM repositories WHERE uuid = $1"
-	_, err := s.db.Exec(ctx, query, id)
+	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, id)
 	return err
 }

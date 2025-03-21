@@ -3,18 +3,15 @@ package repository
 import (
 	"errors"
 	"github.com/google/uuid"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"regexp"
 	"strings"
 )
 
 type Repository struct {
-	ID         uuid.UUID
-	Namespace  string
-	Name       Name
-	Visibility Visibility
-	OwnerID    uuid.UUID
+	ID         uuid.UUID  `json:"id"`
+	Namespace  string     `json:"namespace"`
+	Name       Name       `json:"name"`
+	Visibility Visibility `json:"visibility"`
 }
 
 func (r Repository) IsValid() error {
@@ -84,8 +81,4 @@ func (v Visibility) IsValid() error {
 
 func (v Visibility) String() string {
 	return string(v)
-}
-
-func (v Visibility) HumanReadable() string {
-	return cases.Title(language.Und).String(v.String())
 }

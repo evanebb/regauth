@@ -26,7 +26,6 @@ func SetDefaults(v *viper.Viper) {
 func (c Configuration) IsValid() error {
 	errs := newErrorCollection()
 
-	c.HTTP.isValid(errs)
 	c.Database.isValid(errs)
 	c.Token.isValid(errs)
 	c.Registry.isValid(errs)
@@ -47,13 +46,6 @@ type HTTP struct {
 	Addr        string
 	Certificate string
 	Key         string
-	SessionKey  string
-}
-
-func (c HTTP) isValid(errs *errorCollection) {
-	if c.SessionKey == "" {
-		errs.Add(errors.New("missing http.sessionKey"))
-	}
 }
 
 type Database struct {

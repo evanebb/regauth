@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
-	"github.com/evanebb/regauth/pat"
+	"github.com/evanebb/regauth/token"
 	"github.com/evanebb/regauth/user"
 	"net"
 	"strings"
@@ -11,21 +11,21 @@ import (
 )
 
 type Authenticator interface {
-	Authenticate(ctx context.Context, username, password string, sourceIP net.IP) (pat.PersonalAccessToken, user.User, error)
+	Authenticate(ctx context.Context, username, password string, sourceIP net.IP) (token.PersonalAccessToken, user.User, error)
 }
 
-func NewAuthenticator(p pat.Store, u user.Store) Authenticator {
+func NewAuthenticator(p token.Store, u user.Store) Authenticator {
 	return authenticator{patStore: p, userStore: u}
 }
 
 type authenticator struct {
-	patStore  pat.Store
+	patStore  token.Store
 	userStore user.Store
 }
 
-func (a authenticator) Authenticate(ctx context.Context, username, password string, sourceIP net.IP) (pat.PersonalAccessToken, user.User, error) {
+func (a authenticator) Authenticate(ctx context.Context, username, password string, sourceIP net.IP) (token.PersonalAccessToken, user.User, error) {
 	var u user.User
-	var p pat.PersonalAccessToken
+	var p token.PersonalAccessToken
 
 	u, err := a.userStore.GetByUsername(ctx, username)
 	if err != nil {
@@ -38,7 +38,7 @@ func (a authenticator) Authenticate(ctx context.Context, username, password stri
 
 	p, err = a.patStore.GetByPlainTextToken(ctx, password)
 	if err != nil {
-		if errors.Is(err, pat.ErrNotFound) {
+		if errors.Is(err, token.ErrNotFound) {
 			err = errors.Join(ErrAuthenticationFailed, err)
 		}
 
@@ -54,7 +54,7 @@ func (a authenticator) Authenticate(ctx context.Context, username, password stri
 	}
 
 	// Log that the token was used
-	logEntry := pat.UsageLogEntry{
+	logEntry := token.UsageLogEntry{
 		TokenID:   p.ID,
 		SourceIP:  sourceIP,
 		Timestamp: time.Now(),

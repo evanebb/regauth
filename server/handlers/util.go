@@ -15,9 +15,3 @@ func getUUIDFromRequest(r *http.Request) (uuid.UUID, error) {
 
 	return u, nil
 }
-
-func shouldRenderPartials(r *http.Request) bool {
-	isHtmxRequest := r.Header.Get("HX-Request") != ""
-	isBoosted := r.Header.Get("HX-Boosted") != ""
-	return isHtmxRequest && !isBoosted
-}
