@@ -191,12 +191,22 @@ func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc 
 			return
 		}
 
+		var createNew bool
+
 		authUser, err := s.GetByID(r.Context(), u.ID)
 		if err != nil {
-			// this shouldn't ever happen currently, so just error
-			l.ErrorContext(r.Context(), "could not get auth user", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
+			if errors.Is(err, local.ErrUserNotFound) {
+				// this user has no credentials yet, so let's just create them
+				authUser = local.AuthUser{
+					ID:       u.ID,
+					Username: u.Username.String(),
+				}
+				createNew = true
+			} else {
+				l.ErrorContext(r.Context(), "could not get auth user", slog.Any("error", err))
+				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+				return
+			}
 		}
 
 		if err := authUser.SetPassword(req.Password); err != nil {
@@ -210,8 +220,14 @@ func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc 
 			return
 		}
 
-		if err := s.Update(r.Context(), authUser); err != nil {
-			l.ErrorContext(r.Context(), "could not update auth user", slog.Any("error", err))
+		if createNew {
+			err = s.Create(r.Context(), authUser)
+		} else {
+			err = s.Update(r.Context(), authUser)
+		}
+
+		if err != nil {
+			l.ErrorContext(r.Context(), "could not update password for auth user", slog.Any("error", err))
 			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
