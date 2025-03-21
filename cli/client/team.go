@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/evanebb/regauth/oas"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 	"text/tabwriter"
 )
@@ -86,6 +85,8 @@ func newGetTeamCommand(client *oas.Client) *cobra.Command {
 }
 
 func newCreateTeamCommand(client *oas.Client) *cobra.Command {
+	var name string
+
 	cmd := &cobra.Command{
 		Use: "create",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -102,10 +103,8 @@ func newCreateTeamCommand(client *oas.Client) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().String("name", "", "name of the new team")
-	_ = cmd.MarkPersistentFlagRequired("name")
-
-	_ = viper.BindPFlags(cmd.PersistentFlags())
+	cmd.Flags().StringVar(&name, "name", "", "name of the new team")
+	_ = cmd.MarkFlagRequired("name")
 
 	return cmd
 }
@@ -184,6 +183,11 @@ func newListTeamMembersCmd(client *oas.Client) *cobra.Command {
 }
 
 func newAddTeamMemberCmd(client *oas.Client) *cobra.Command {
+	var (
+		username string
+		role     string
+	)
+
 	cmd := &cobra.Command{
 		Use: "add",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -195,8 +199,8 @@ func newAddTeamMemberCmd(client *oas.Client) *cobra.Command {
 
 			res, err := client.AddTeamMember(ctx,
 				&oas.TeamMemberRequest{
-					Username: viper.GetString("username"),
-					Role:     oas.TeamMemberRequestRole(viper.GetString("role")),
+					Username: username,
+					Role:     oas.TeamMemberRequestRole(role),
 				},
 				oas.AddTeamMemberParams{
 					Name: args[0],
@@ -212,12 +216,10 @@ func newAddTeamMemberCmd(client *oas.Client) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().String("username", "", "username of the user to add")
-	_ = cmd.MarkPersistentFlagRequired("username")
-	cmd.PersistentFlags().String("role", "", "team role of the user, can be either 'admin' or 'user'")
-	_ = cmd.MarkPersistentFlagRequired("role")
-
-	_ = viper.BindPFlags(cmd.PersistentFlags())
+	cmd.Flags().StringVar(&username, "username", "", "username of the user to add")
+	_ = cmd.MarkFlagRequired("username")
+	cmd.Flags().StringVar(&role, "role", "", "team role of the user, can be either 'admin' or 'user'")
+	_ = cmd.MarkFlagRequired("role")
 
 	return cmd
 }

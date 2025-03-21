@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/evanebb/regauth/oas"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 	"text/tabwriter"
 )
@@ -85,12 +84,17 @@ func newGetUserCommand(client *oas.Client) *cobra.Command {
 }
 
 func newCreateUserCommand(client *oas.Client) *cobra.Command {
+	var (
+		username string
+		role     string
+	)
+
 	cmd := &cobra.Command{
 		Use: "create",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			user, err := client.CreateUser(context.Background(), &oas.UserRequest{
-				Username: viper.GetString("username"),
-				Role:     oas.UserRequestRole(viper.GetString("role")),
+				Username: username,
+				Role:     oas.UserRequestRole(role),
 			})
 			if err != nil {
 				fmt.Println(err)
@@ -102,12 +106,10 @@ func newCreateUserCommand(client *oas.Client) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().String("username", "", "username of the new user")
-	_ = cmd.MarkPersistentFlagRequired("username")
-	cmd.PersistentFlags().String("role", "", "role of the new user, can be either 'admin' or 'user'")
-	_ = cmd.MarkPersistentFlagRequired("role")
-
-	_ = viper.BindPFlags(cmd.PersistentFlags())
+	cmd.Flags().StringVar(&username, "username", "", "username of the new user")
+	_ = cmd.MarkFlagRequired("username")
+	cmd.Flags().StringVar(&role, "role", "", "role of the new user, can be either 'admin' or 'user'")
+	_ = cmd.MarkFlagRequired("role")
 
 	return cmd
 }
@@ -139,6 +141,8 @@ func newDeleteUserCommand(client *oas.Client) *cobra.Command {
 }
 
 func newChangeUserPasswordCommand(client *oas.Client) *cobra.Command {
+	var password string
+
 	cmd := &cobra.Command{
 		Use: "change-password",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -150,7 +154,7 @@ func newChangeUserPasswordCommand(client *oas.Client) *cobra.Command {
 
 			err := client.ChangeUserPassword(ctx,
 				&oas.UserPasswordChangeRequest{
-					Password: viper.GetString("password"),
+					Password: password,
 				},
 				oas.ChangeUserPasswordParams{
 					Username: args[0],
@@ -166,10 +170,8 @@ func newChangeUserPasswordCommand(client *oas.Client) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().String("password", "", "new password for the user")
-	_ = cmd.MarkPersistentFlagRequired("password")
-
-	_ = viper.BindPFlags(cmd.PersistentFlags())
+	cmd.Flags().StringVar(&password, "password", "", "new password for the user")
+	_ = cmd.MarkFlagRequired("password")
 
 	return cmd
 }

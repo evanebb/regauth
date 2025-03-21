@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/evanebb/regauth/oas"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -14,9 +13,7 @@ import (
 
 func newRepositoryCmd(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "repository",
-		Short: "`repository`",
-		Long:  "`repository`",
+		Use: "repository",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -93,13 +90,19 @@ func newGetRepositoryCommand(client *oas.Client) *cobra.Command {
 }
 
 func newCreateRepositoryCommand(client *oas.Client) *cobra.Command {
+	var (
+		namespace  string
+		name       string
+		visibility string
+	)
+
 	cmd := &cobra.Command{
 		Use: "create",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			repo, err := client.CreateRepository(context.Background(), &oas.RepositoryRequest{
-				Namespace:  viper.GetString("namespace"),
-				Name:       viper.GetString("name"),
-				Visibility: oas.RepositoryRequestVisibility(viper.GetString("visibility")),
+				Namespace:  namespace,
+				Name:       name,
+				Visibility: oas.RepositoryRequestVisibility(visibility),
 			})
 			if err != nil {
 				fmt.Println(err)
@@ -111,14 +114,12 @@ func newCreateRepositoryCommand(client *oas.Client) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().String("namespace", "", "namespace of the new repository")
-	_ = cmd.MarkPersistentFlagRequired("namespace")
-	cmd.PersistentFlags().String("name", "", "name of the new repository")
-	_ = cmd.MarkPersistentFlagRequired("name")
-	cmd.PersistentFlags().String("visibility", "", "visibility of the new repository, can be either 'private' or 'public'")
-	_ = cmd.MarkPersistentFlagRequired("visibility")
-
-	_ = viper.BindPFlags(cmd.PersistentFlags())
+	cmd.Flags().StringVar(&namespace, "namespace", "", "namespace of the new repository")
+	_ = cmd.MarkFlagRequired("namespace")
+	cmd.Flags().StringVar(&name, "name", "", "name of the new repository")
+	_ = cmd.MarkFlagRequired("name")
+	cmd.Flags().StringVar(&visibility, "visibility", "", "visibility of the new repository, can be either 'private' or 'public'")
+	_ = cmd.MarkFlagRequired("visibility")
 
 	return cmd
 }

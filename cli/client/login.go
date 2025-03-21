@@ -3,10 +3,15 @@ package client
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
+	var (
+		token    string
+		username string
+		password string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "login",
 		Short: "login",
@@ -19,7 +24,6 @@ func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
 			host := args[0]
 			credentials := Credentials{Host: host}
 
-			token, username, password := viper.GetString("token"), viper.GetString("username"), viper.GetString("password")
 			if token != "" {
 				credentials.Token = token
 			} else if username != "" && password != "" {
@@ -37,11 +41,9 @@ func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringP("username", "u", "", "username to use for authentication")
-	cmd.PersistentFlags().StringP("password", "p", "", "password to use for authentication")
-	cmd.PersistentFlags().StringP("token", "t", "", "personal access token to use for authentication")
-
-	_ = viper.BindPFlags(cmd.PersistentFlags())
+	cmd.Flags().StringVarP(&token, "token", "t", "", "personal access token to use for authentication")
+	cmd.Flags().StringVarP(&username, "username", "u", "", "username to use for authentication")
+	cmd.Flags().StringVarP(&password, "password", "p", "", "password to use for authentication")
 
 	return cmd
 }

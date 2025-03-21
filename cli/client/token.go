@@ -7,7 +7,6 @@ import (
 	"github.com/evanebb/regauth/oas"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -91,17 +90,24 @@ func newGetTokenCommand(client *oas.Client) *cobra.Command {
 }
 
 func newCreateTokenCommand(client *oas.Client, credentialStore CredentialStore) *cobra.Command {
+	var (
+		description       string
+		permission        string
+		expirationDateStr string
+		login             bool
+	)
+
 	cmd := &cobra.Command{
 		Use: "create",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			expirationDate, err := time.Parse(time.RFC3339, viper.GetString("expirationDate"))
+			expirationDate, err := time.Parse(time.RFC3339, expirationDateStr)
 			if err != nil {
-				return fmt.Errorf("invalid expiration date %s: %w", viper.GetString("expirationDate"), err)
+				return fmt.Errorf("invalid expiration date %s: %w", expirationDate, err)
 			}
 
 			res, err := client.CreatePersonalAccessToken(context.Background(), &oas.PersonalAccessTokenRequest{
-				Description:    viper.GetString("description"),
-				Permission:     oas.PersonalAccessTokenRequestPermission(viper.GetString("permission")),
+				Description:    description,
+				Permission:     oas.PersonalAccessTokenRequestPermission(permission),
 				ExpirationDate: expirationDate,
 			})
 			if err != nil {
@@ -109,7 +115,7 @@ func newCreateTokenCommand(client *oas.Client, credentialStore CredentialStore) 
 				return nil
 			}
 
-			if viper.GetBool("login") {
+			if login {
 				if err := logInUsingToken(credentialStore, res.Token); err != nil {
 					fmt.Println("could not log in using new token: " + err.Error())
 				} else {
@@ -123,15 +129,13 @@ func newCreateTokenCommand(client *oas.Client, credentialStore CredentialStore) 
 		},
 	}
 
-	cmd.PersistentFlags().String("description", "", "description of the new personal access token")
-	_ = cmd.MarkPersistentFlagRequired("description")
-	cmd.PersistentFlags().String("permission", "", "permission of the new personal access token, can be 'readOnly', 'readWrite' or 'readWriteDelete'")
-	_ = cmd.MarkPersistentFlagRequired("permission")
-	cmd.PersistentFlags().String("expirationDate", "", "expiration date of the new personal access token, must be a valid RFC3339 date")
-	_ = cmd.MarkPersistentFlagRequired("expirationDate")
-	cmd.PersistentFlags().Bool("login", false, "immediately log in using the newly generated token and replace your current credentials")
-
-	_ = viper.BindPFlags(cmd.PersistentFlags())
+	cmd.Flags().StringVar(&description, "description", "", "description of the new personal access token")
+	_ = cmd.MarkFlagRequired("description")
+	cmd.Flags().StringVar(&permission, "permission", "", "permission of the new personal access token, can be 'readOnly', 'readWrite' or 'readWriteDelete'")
+	_ = cmd.MarkFlagRequired("permission")
+	cmd.Flags().StringVar(&expirationDateStr, "expirationDate", "", "expiration date of the new personal access token, must be a valid RFC3339 date")
+	_ = cmd.MarkFlagRequired("expirationDate")
+	cmd.Flags().BoolVar(&login, "login", false, "immediately log in using the newly generated token and replace your current credentials")
 
 	return cmd
 }
