@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +19,7 @@ func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
 		Long:  "login",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return cmd.Usage()
+				return errors.New("specify a host to log in to")
 			}
 
 			host := args[0]
@@ -29,7 +30,7 @@ func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
 			} else if username != "" && password != "" {
 				credentials.Username, credentials.Password = username, password
 			} else {
-				return cmd.Usage()
+				return errors.New("no credentials given, please specify either the --username and --password options, or the --token option")
 			}
 
 			if err := credentialStore.Save(credentials); err != nil {
