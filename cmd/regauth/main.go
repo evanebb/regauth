@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/evanebb/regauth/cli"
+	"github.com/evanebb/regauth/cli/server"
 	"os"
 )
 
 func main() {
-	if err := cli.NewRootCmd().Execute(); err != nil {
+	if err := server.NewRootCmd().Execute(); err != nil {
 		os.Exit(1)
 	}
 }
