@@ -9,6 +9,7 @@ import (
 	"github.com/evanebb/regauth/server/middleware"
 	"github.com/evanebb/regauth/server/response"
 	"github.com/evanebb/regauth/token"
+	"github.com/evanebb/regauth/util"
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
@@ -128,7 +129,7 @@ func ListTokens(l *slog.Logger, s token.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONResponse(w, http.StatusOK, tokens)
+		response.WriteJSONResponse(w, http.StatusOK, util.NilSliceToEmpty(tokens))
 	}
 }
 

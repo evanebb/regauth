@@ -8,6 +8,7 @@ import (
 	"github.com/evanebb/regauth/server/middleware"
 	"github.com/evanebb/regauth/server/response"
 	"github.com/evanebb/regauth/user"
+	"github.com/evanebb/regauth/util"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"log/slog"
@@ -124,7 +125,7 @@ func ListUsers(l *slog.Logger, s user.Store) http.HandlerFunc {
 			return
 		}
 
-		response.WriteJSONResponse(w, http.StatusOK, users)
+		response.WriteJSONResponse(w, http.StatusOK, util.NilSliceToEmpty(users))
 	}
 }
 
