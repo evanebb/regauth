@@ -50,6 +50,9 @@ CREATE TABLE namespaces
     team_uuid uuid REFERENCES teams (uuid) ON DELETE CASCADE
 );
 
+INSERT INTO namespaces (uuid, name, user_uuid)
+VALUES ('f85d60eb-88b8-485f-ad53-5f214b1b29f8', 'admin', '965389fb-27ce-4f81-9e59-6ef9cb3b2472');
+
 CREATE TYPE repository_visibility AS ENUM ('public', 'private');
 
 CREATE TABLE repositories
