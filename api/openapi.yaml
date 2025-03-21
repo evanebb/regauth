@@ -18,18 +18,26 @@ tags:
 paths:
   /v1/repositories:
     get:
+      operationId: listRepositories
       summary: List repositories
       tags: [ Repositories ]
       responses:
         200:
-          description: Successfully listed repositories
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/RepositoryResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
+      operationId: createRepository
       summary: Create repository
       tags: [ Repositories ]
       requestBody:
@@ -40,13 +48,20 @@ paths:
               $ref: "#/components/schemas/RepositoryRequest"
       responses:
         200:
-          description: Successfully created repository
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/RepositoryResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /v1/repositories/{namespace}/{name}:
     get:
+      operationId: getRepository
       summary: Get repository
       tags: [ Repositories ]
       parameters:
@@ -62,12 +77,19 @@ paths:
             type: string
       responses:
         200:
-          description: Successfully returned repository
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/RepositoryResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
+      operationId: deleteRepository
       summary: Delete repository
       tags: [ Repositories ]
       parameters:
@@ -83,52 +105,35 @@ paths:
             type: string
       responses:
         204:
-          description: Successfully deleted repository
-  /v1/repositories/{id}:
-    get:
-      summary: Get repository
-      tags: [ Repositories ]
-      parameters:
-        - in: path
-          required: true
-          name: id
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: Successfully returned repository
+          description: Successful operation
+        default:
+          description: Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RepositoryResponse"
-    delete:
-      summary: Delete repository
-      tags: [ Repositories ]
-      parameters:
-        - in: path
-          required: true
-          name: id
-          schema:
-            type: string
-            format: uuid
-      responses:
-        204:
-          description: Successfully deleted repository
+                $ref: "#/components/schemas/Error"
   /v1/tokens:
     get:
+      operationId: listPersonalAccessTokens
       summary: List personal access tokens
       tags: [ Personal access tokens ]
       responses:
         200:
-          description: Successfully listed personal access tokens
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/PersonalAccessTokenResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
+      operationId: createPersonalAccessToken
       summary: Create personal access token
       tags: [ Personal access tokens ]
       security:
@@ -142,23 +147,44 @@ paths:
               $ref: "#/components/schemas/PersonalAccessTokenRequest"
       responses:
         200:
-          description: Successfully created personal access token
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PersonalAccessTokenCreationResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /v1/tokens/{id}:
     get:
+      operationId: getPersonalAccessToken
       summary: Get personal access token
-      tags: [ Repositories ]
+      tags: [ Personal access tokens ]
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+            format: uuid
       responses:
         200:
-          description: Successfully returned personal access token
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PersonalAccessTokenResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
+      operationId: deletePersonalAccessToken
       summary: Delete personal access token
       tags: [ Personal access tokens ]
       parameters:
@@ -170,21 +196,35 @@ paths:
             format: uuid
       responses:
         204:
-          description: Successfully deleted personal access token
+          description: Successful operation
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /v1/teams:
     get:
+      operationId: listTeams
       summary: List teams
       tags: [ Teams ]
       responses:
         200:
-          description: Successfully listed teams
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/TeamResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
+      operationId: createTeam
       summary: Create team
       tags: [ Teams ]
       requestBody:
@@ -195,51 +235,96 @@ paths:
               $ref: "#/components/schemas/TeamRequest"
       responses:
         200:
-          description: Successfully created team
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TeamResponse"
-  /v1/teams/{id}:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/teams/{name}:
     get:
+      operationId: getTeam
       summary: Get team
       tags: [ Teams ]
+      parameters:
+        - in: path
+          required: true
+          name: name
+          schema:
+            type: string
       responses:
         200:
-          description: Successfully returned team
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TeamResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
+      operationId: deleteTeam
       summary: Delete team
       tags: [ Teams ]
       parameters:
         - in: path
           required: true
-          name: id
+          name: name
           schema:
             type: string
-            format: uuid
       responses:
         204:
-          description: Successfully deleted team
-  /v1/teams/{id}/members:
+          description: Successful operation
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/teams/{name}/members:
     get:
+      operationId: listTeamMembers
       summary: List team members
       tags: [ Teams ]
+      parameters:
+        - in: path
+          required: true
+          name: name
+          schema:
+            type: string
       responses:
         200:
-          description: Successfully listed team members
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/TeamMemberResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
+      operationId: addTeamMember
       summary: Add team member
       tags: [ Teams ]
+      parameters:
+        - in: path
+          required: true
+          name: name
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -248,45 +333,64 @@ paths:
               $ref: "#/components/schemas/TeamMemberRequest"
       responses:
         200:
-          description: Successfully added team member
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/TeamMemberResponse"
-  /v1/teams/{id}/members/{userId}:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/teams/{name}/members/{username}:
     delete:
+      operationId: removeTeamMember
       summary: Remove team member
       tags: [ Teams ]
       parameters:
         - in: path
           required: true
-          name: id
+          name: name
           schema:
             type: string
-            format: uuid
         - in: path
           required: true
-          name: userId
+          name: username
           schema:
             type: string
-            format: uuid
       responses:
         204:
-          description: Successfully removed team member
+          description: Successful operation
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /v1/users:
     get:
+      operationId: listUsers
       summary: List users
       tags: [ Users ]
       responses:
         200:
-          description: Successfully listed users
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/UserResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
+      operationId: createUser
       summary: Create user
       tags: [ Users ]
       requestBody:
@@ -297,37 +401,63 @@ paths:
               $ref: "#/components/schemas/UserRequest"
       responses:
         200:
-          description: Successfully created user
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
-  /v1/users/{id}:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/users/{username}:
     get:
+      operationId: getUser
       summary: Get user
       tags: [ Users ]
+      parameters:
+        - in: path
+          required: true
+          name: username
+          schema:
+            type: string
       responses:
         200:
-          description: Successfully returned user
+          description: Successful operation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
+      operationId: deleteUser
       summary: Delete user
       tags: [ Users ]
       parameters:
         - in: path
           required: true
-          name: id
+          name: username
           schema:
             type: string
-            format: uuid
       responses:
         204:
-          description: Successfully deleted user
-  /v1/users/{id}/password:
+          description: Successful operation
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/users/{username}/password:
     post:
+      operationId: changeUserPassword
       summary: Change password for user
       tags: [ Users ]
       requestBody:
@@ -339,13 +469,18 @@ paths:
       parameters:
         - in: path
           required: true
-          name: id
+          name: username
           schema:
             type: string
-            format: uuid
       responses:
         204:
-          description: Successfully updated password
+          description: Successful operation
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 security:
   - personalAccessToken: [ ]
 components:
@@ -359,6 +494,7 @@ components:
   schemas:
     RepositoryRequest:
       type: object
+      required: [ namespace, name, visibility ]
       properties:
         namespace:
           type: string
@@ -371,14 +507,16 @@ components:
           enum: [ "private", "public" ]
     RepositoryResponse:
       allOf:
-        - $ref: "#/components/schemas/RepositoryRequest"
         - type: object
+          required: [ id ]
           properties:
             id:
               type: string
               format: uuid
+        - $ref: "#/components/schemas/RepositoryRequest"
     PersonalAccessTokenRequest:
       type: object
+      required: [ description, permission, expirationDate ]
       properties:
         description:
           type: string
@@ -391,16 +529,18 @@ components:
           format: date-time
     PersonalAccessTokenResponse:
       allOf:
-        - $ref: "#/components/schemas/PersonalAccessTokenRequest"
         - type: object
+          required: [ id ]
           properties:
             id:
               type: string
               format: uuid
+        - $ref: "#/components/schemas/PersonalAccessTokenRequest"
     PersonalAccessTokenCreationResponse:
       allOf:
         - $ref: "#/components/schemas/PersonalAccessTokenResponse"
         - type: object
+          required: [ token ]
           properties:
             token:
               type: string
@@ -408,20 +548,23 @@ components:
               example: "registry_pat_SVV_otfQNmSjo7viDiCrC0AKe6Qa_iFhxXJBZE1vMOByC9nbUtBPsz3r"
     TeamRequest:
       type: object
+      required: [ name ]
       properties:
         name:
           type: string
           example: myteam
     TeamResponse:
       allOf:
-        - $ref: "#/components/schemas/TeamRequest"
         - type: object
+          required: [ id ]
           properties:
             id:
               type: string
               format: uuid
+        - $ref: "#/components/schemas/TeamRequest"
     TeamMemberRequest:
       type: object
+      required: [ username, role ]
       properties:
         username:
           type: string
@@ -431,14 +574,16 @@ components:
           enum: [ "admin", "user" ]
     TeamMemberResponse:
       allOf:
-        - $ref: "#/components/schemas/TeamMemberRequest"
         - type: object
+          required: [ userId ]
           properties:
             userId:
               type: string
               format: uuid
+        - $ref: "#/components/schemas/TeamMemberRequest"
     UserRequest:
       type: object
+      required: [ username, role ]
       properties:
         username:
           type: string
@@ -448,15 +593,24 @@ components:
           enum: [ "admin", "user" ]
     UserResponse:
       allOf:
-        - $ref: "#/components/schemas/UserRequest"
         - type: object
+          required: [ id ]
           properties:
             id:
               type: string
               format: uuid
+        - $ref: "#/components/schemas/UserRequest"
     UserPasswordChangeRequest:
       type: object
+      required: [ password ]
       properties:
         password:
           type: string
           example: newpassword
+    Error:
+      type: object
+      required: [ message ]
+      properties:
+        message:
+          type: string
+          example: "internal server error"

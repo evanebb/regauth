@@ -8,6 +8,7 @@ import (
 	"github.com/evanebb/regauth/server/middleware"
 	"github.com/evanebb/regauth/server/response"
 	"github.com/evanebb/regauth/user"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
@@ -39,13 +40,13 @@ func RequireRole(l *slog.Logger, role user.Role) func(next http.Handler) http.Ha
 func UserParser(l *slog.Logger, s user.Store) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			id, err := getUUIDFromRequest(r)
-			if err != nil {
-				response.WriteJSONError(w, http.StatusBadRequest, "invalid ID given")
+			username := chi.URLParam(r, "username")
+			if username == "" {
+				response.WriteJSONError(w, http.StatusBadRequest, "no username given")
 				return
 			}
 
-			u, err := s.GetByID(r.Context(), id)
+			u, err := s.GetByUsername(r.Context(), username)
 			if err != nil {
 				if errors.Is(err, user.ErrNotFound) {
 					response.WriteJSONError(w, http.StatusNotFound, "user not found")

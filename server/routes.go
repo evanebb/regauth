@@ -66,12 +66,6 @@ func v1ApiRouter(
 		r.Post("/", handlers.CreateRepository(logger, repoStore, teamStore))
 		r.Get("/", handlers.ListRepositories(logger, repoStore))
 
-		r.Route("/{id}", func(r chi.Router) {
-			r.Use(handlers.RepositoryParser(logger, repoStore, teamStore))
-			r.Get("/", handlers.GetRepository(logger))
-			r.Delete("/", handlers.DeleteRepository(logger, repoStore))
-		})
-
 		r.Route("/{namespace}/{name}", func(r chi.Router) {
 			r.Use(handlers.RepositoryParser(logger, repoStore, teamStore))
 			r.Get("/", handlers.GetRepository(logger))
@@ -96,7 +90,7 @@ func v1ApiRouter(
 	r.Route("/teams", func(r chi.Router) {
 		r.Post("/", handlers.CreateTeam(logger, teamStore))
 		r.Get("/", handlers.ListTeams(logger, teamStore))
-		r.Route("/{id}", func(r chi.Router) {
+		r.Route("/{name}", func(r chi.Router) {
 			r.Use(handlers.TeamParser(logger, teamStore))
 			r.Get("/", handlers.GetTeam(logger))
 			r.Delete("/", handlers.DeleteTeam(logger, teamStore))
@@ -104,7 +98,7 @@ func v1ApiRouter(
 			r.Route("/members", func(r chi.Router) {
 				r.Get("/", handlers.ListTeamMembers(logger, teamStore))
 				r.Post("/", handlers.AddTeamMember(logger, teamStore, userStore))
-				r.Delete("/{userId}", handlers.RemoveTeamMember(logger, teamStore))
+				r.Delete("/{username}", handlers.RemoveTeamMember(logger, teamStore, userStore))
 			})
 		})
 	})
@@ -113,7 +107,7 @@ func v1ApiRouter(
 		r.Use(handlers.RequireRole(logger, user.RoleAdmin))
 		r.Post("/", handlers.CreateUser(logger, userStore))
 		r.Get("/", handlers.ListUsers(logger, userStore))
-		r.Route("/{id}", func(r chi.Router) {
+		r.Route("/{username}", func(r chi.Router) {
 			r.Use(handlers.UserParser(logger, userStore))
 			r.Get("/", handlers.GetUser(logger))
 			r.Delete("/", handlers.DeleteUser(logger, userStore))

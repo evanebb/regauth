@@ -7,6 +7,7 @@ import (
 	"github.com/evanebb/regauth/server/middleware"
 	"github.com/evanebb/regauth/server/response"
 	"github.com/evanebb/regauth/user"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
@@ -25,13 +26,13 @@ func TeamParser(l *slog.Logger, s user.TeamStore) func(next http.Handler) http.H
 				return
 			}
 
-			id, err := getUUIDFromRequest(r)
-			if err != nil {
-				response.WriteJSONError(w, http.StatusBadRequest, "invalid ID given")
+			name := chi.URLParam(r, "name")
+			if name == "" {
+				response.WriteJSONError(w, http.StatusBadRequest, "no team name given")
 				return
 			}
 
-			team, err := s.GetByID(r.Context(), id)
+			team, err := s.GetByName(r.Context(), name)
 			if err != nil {
 				if errors.Is(err, user.ErrTeamNotFound) {
 					response.WriteJSONError(w, http.StatusNotFound, "team not found")
@@ -274,7 +275,7 @@ func ListTeamMembers(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 	}
 }
 
-func RemoveTeamMember(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
+func RemoveTeamMember(l *slog.Logger, teamStore user.TeamStore, userStore user.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentMember, ok := teamMemberFromContext(r.Context())
 		if !ok {
@@ -288,13 +289,30 @@ func RemoveTeamMember(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		id, err := getUUIDFromRequest(r)
-		if err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "invalid ID given")
+		username := chi.URLParam(r, "username")
+		if username == "" {
+			response.WriteJSONError(w, http.StatusBadRequest, "no username given")
 			return
 		}
 
-		if err := s.RemoveTeamMember(r.Context(), currentMember.TeamID, id); err != nil {
+		userToRemove, err := userStore.GetByUsername(r.Context(), username)
+		if err != nil {
+			if errors.Is(err, user.ErrNotFound) {
+				response.WriteJSONError(w, http.StatusNotFound, "user not found")
+				return
+			}
+
+			l.ErrorContext(r.Context(), "could not get user", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		if currentMember.UserID == userToRemove.ID {
+			response.WriteJSONError(w, http.StatusBadRequest, "cannot remove current user from team")
+			return
+		}
+
+		if err := teamStore.RemoveTeamMember(r.Context(), currentMember.TeamID, userToRemove.ID); err != nil {
 			l.ErrorContext(r.Context(), "could not remove team member", slog.Any("error", err))
 			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 			return

@@ -26,19 +26,13 @@ func RepositoryParser(l *slog.Logger, repoStore repository.Store, teamStore user
 				return
 			}
 
-			var repo repository.Repository
-			var err error
-
-			// check if the request URL contains a UUID
-			id, err := getUUIDFromRequest(r)
-			if err == nil {
-				repo, err = repoStore.GetByID(r.Context(), id)
-			} else {
-				// no UUID found, check if the namespace and name have been specified
-				namespace, name := chi.URLParam(r, "namespace"), chi.URLParam(r, "name")
-				repo, err = repoStore.GetByNamespaceAndName(r.Context(), namespace, name)
+			namespace, name := chi.URLParam(r, "namespace"), chi.URLParam(r, "name")
+			if namespace == "" || name == "" {
+				response.WriteJSONError(w, http.StatusBadRequest, "no repository namespace or name given")
+				return
 			}
 
+			repo, err := repoStore.GetByNamespaceAndName(r.Context(), namespace, name)
 			if err != nil {
 				if errors.Is(err, repository.ErrNotFound) {
 					response.WriteJSONError(w, http.StatusNotFound, "repository not found")
@@ -165,7 +159,7 @@ func ListRepositories(l *slog.Logger, s repository.Store) http.HandlerFunc {
 		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
 		if !ok {
 			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusUnauthorized, "authenticated failed")
+			response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
 			return
 		}
 
