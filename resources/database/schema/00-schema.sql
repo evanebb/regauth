@@ -2,7 +2,7 @@ CREATE TYPE user_role AS ENUM ('admin', 'user');
 
 CREATE TABLE users
 (
-    id       serial PRIMARY KEY,
+    id       bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     uuid     uuid UNIQUE,
     username varchar(255) UNIQUE,
     role     user_role
@@ -13,7 +13,7 @@ VALUES ('965389fb-27ce-4f81-9e59-6ef9cb3b2472', 'admin', 'admin');
 
 CREATE TABLE local_auth_users
 (
-    id            serial PRIMARY KEY,
+    id            bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     uuid          uuid REFERENCES users (uuid) ON DELETE CASCADE,
     username      varchar(255) REFERENCES users (username),
     password_hash varchar(255)
@@ -25,16 +25,16 @@ VALUES ('965389fb-27ce-4f81-9e59-6ef9cb3b2472', 'admin',
 
 CREATE TABLE teams
 (
-    id   serial PRIMARY KEY,
+    id   bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     uuid uuid UNIQUE,
-    name varchar(255) UNIQUE,
+    name varchar(255) UNIQUE
 );
 
 CREATE TYPE team_member_role AS ENUM ('admin', 'user');
 
 CREATE TABLE team_members
 (
-    id        serial PRIMARY KEY,
+    id        bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_uuid uuid REFERENCES users (uuid) ON DELETE CASCADE,
     team_uuid uuid REFERENCES teams (uuid) ON DELETE CASCADE,
     role      team_member_role,
@@ -43,7 +43,7 @@ CREATE TABLE team_members
 
 CREATE TABLE namespaces
 (
-    id        serial PRIMARY KEY,
+    id        bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     uuid      uuid UNIQUE,
     name      varchar(255) UNIQUE,
     user_uuid uuid REFERENCES users (uuid) ON DELETE CASCADE,
@@ -57,7 +57,7 @@ CREATE TYPE repository_visibility AS ENUM ('public', 'private');
 
 CREATE TABLE repositories
 (
-    id         serial PRIMARY KEY,
+    id         bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     uuid       uuid UNIQUE,
     namespace  uuid REFERENCES namespaces (uuid) ON DELETE CASCADE,
     name       varchar(255),
@@ -69,7 +69,7 @@ CREATE TYPE token_permission AS ENUM ('read_only', 'read_write', 'read_write_del
 
 CREATE TABLE personal_access_tokens
 (
-    id              serial PRIMARY KEY,
+    id              bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     uuid            uuid UNIQUE,
     hash            varchar,
     last_eight      varchar(8),
@@ -81,7 +81,7 @@ CREATE TABLE personal_access_tokens
 
 CREATE TABLE personal_access_tokens_usage_log
 (
-    id         serial PRIMARY KEY,
+    id         bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     token_uuid uuid REFERENCES personal_access_tokens (uuid) ON DELETE CASCADE,
     source_ip  inet,
     timestamp  timestamp
