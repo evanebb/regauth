@@ -5,9 +5,9 @@ CREATE TYPE user_role AS ENUM ('admin', 'user');
 CREATE TABLE users
 (
     id       bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    uuid     uuid UNIQUE,
-    username varchar(255) UNIQUE,
-    role     user_role
+    uuid     uuid UNIQUE         NOT NULL,
+    username varchar(255) UNIQUE NOT NULL,
+    role     user_role           NOT NULL
 );
 
 INSERT INTO users (uuid, username, role)
@@ -16,9 +16,9 @@ VALUES ('965389fb-27ce-4f81-9e59-6ef9cb3b2472', 'admin', 'admin');
 CREATE TABLE local_auth_users
 (
     id            bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    uuid          uuid REFERENCES users (uuid) ON DELETE CASCADE,
-    username      varchar(255) REFERENCES users (username),
-    password_hash varchar(255)
+    uuid          uuid REFERENCES users (uuid) ON DELETE CASCADE NOT NULL,
+    username      varchar(255) REFERENCES users (username)       NOT NULL,
+    password_hash varchar(255)                                   NOT NULL
 );
 
 INSERT INTO local_auth_users (uuid, username, password_hash)
@@ -28,8 +28,8 @@ VALUES ('965389fb-27ce-4f81-9e59-6ef9cb3b2472', 'admin',
 CREATE TABLE teams
 (
     id   bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    uuid uuid UNIQUE,
-    name varchar(255) UNIQUE
+    uuid uuid UNIQUE         NOT NULL,
+    name varchar(255) UNIQUE NOT NULL
 );
 
 CREATE TYPE team_member_role AS ENUM ('admin', 'user');
@@ -37,17 +37,17 @@ CREATE TYPE team_member_role AS ENUM ('admin', 'user');
 CREATE TABLE team_members
 (
     id        bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    user_uuid uuid REFERENCES users (uuid) ON DELETE CASCADE,
-    team_uuid uuid REFERENCES teams (uuid) ON DELETE CASCADE,
-    role      team_member_role,
+    user_uuid uuid REFERENCES users (uuid) ON DELETE CASCADE NOT NULL,
+    team_uuid uuid REFERENCES teams (uuid) ON DELETE CASCADE NOT NULL,
+    role      team_member_role                               NOT NULL,
     UNIQUE (user_uuid, team_uuid)
 );
 
 CREATE TABLE namespaces
 (
     id        bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    uuid      uuid UNIQUE,
-    name      varchar(255) UNIQUE,
+    uuid      uuid UNIQUE         NOT NULL,
+    name      varchar(255) UNIQUE NOT NULL,
     user_uuid uuid REFERENCES users (uuid) ON DELETE CASCADE,
     team_uuid uuid REFERENCES teams (uuid) ON DELETE CASCADE
 );
@@ -60,10 +60,10 @@ CREATE TYPE repository_visibility AS ENUM ('public', 'private');
 CREATE TABLE repositories
 (
     id         bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    uuid       uuid UNIQUE,
-    namespace  uuid REFERENCES namespaces (uuid) ON DELETE CASCADE,
-    name       varchar(255),
-    visibility repository_visibility,
+    uuid       uuid UNIQUE                                         NOT NULL,
+    namespace  uuid REFERENCES namespaces (uuid) ON DELETE CASCADE NOT NULL,
+    name       varchar(255)                                        NOT NULL,
+    visibility repository_visibility                               NOT NULL,
     UNIQUE (namespace, name)
 );
 
@@ -72,21 +72,21 @@ CREATE TYPE token_permission AS ENUM ('read_only', 'read_write', 'read_write_del
 CREATE TABLE personal_access_tokens
 (
     id              bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    uuid            uuid UNIQUE,
-    hash            varchar,
-    last_eight      varchar(8),
-    description     varchar(255),
-    permission      token_permission,
+    uuid            uuid UNIQUE                                    NOT NULL,
+    hash            varchar                                        NOT NULL,
+    last_eight      varchar(8)                                     NOT NULL,
+    description     varchar(255)                                   NOT NULL,
+    permission      token_permission                               NOT NULL,
     expiration_date timestamp,
-    user_uuid       uuid REFERENCES users (uuid) ON DELETE CASCADE
+    user_uuid       uuid REFERENCES users (uuid) ON DELETE CASCADE NOT NULL
 );
 
 CREATE TABLE personal_access_tokens_usage_log
 (
     id         bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    token_uuid uuid REFERENCES personal_access_tokens (uuid) ON DELETE CASCADE,
-    source_ip  inet,
-    timestamp  timestamp
+    token_uuid uuid REFERENCES personal_access_tokens (uuid) ON DELETE CASCADE NOT NULL,
+    source_ip  inet                                                            NOT NULL,
+    timestamp  timestamp                                                       NOT NULL
 );
 CREATE INDEX ON personal_access_tokens_usage_log (token_uuid);
 -- +goose StatementEnd
