@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"errors"
 	"github.com/google/uuid"
 	"regexp"
 	"strings"
@@ -34,34 +33,30 @@ var nameNoRepeatingSpecialChars = regexp.MustCompile("[-_.]{2,}")
 func (n Name) IsValid() error {
 	l := len([]rune(n))
 	if l < 2 {
-		return errors.New("name cannot be shorter than 2 characters")
+		return InvalidNameError("name cannot be shorter than 2 characters")
 	}
 
 	if l > 255 {
-		return errors.New("name cannot be longer than 255 characters")
+		return InvalidNameError("name cannot be longer than 255 characters")
 	}
 
-	str := n.String()
+	str := string(n)
 	disallowedStartEndChars := []string{"-", "_", "."}
 	for _, disallowed := range disallowedStartEndChars {
 		if strings.HasPrefix(str, disallowed) || strings.HasSuffix(str, disallowed) {
-			return errors.New(`name cannot start or end with "-", "_" or "."`)
+			return InvalidNameError(`name cannot start or end with "-", "_" or "."`)
 		}
 	}
 
 	if !validName.MatchString(str) {
-		return errors.New(`name can only contain alphanumeric characters, "-", "_" and "." (non-repeating)`)
+		return InvalidNameError(`name can only contain alphanumeric characters, "-", "_" and "." (non-repeating)`)
 	}
 
 	if nameNoRepeatingSpecialChars.MatchString(str) {
-		return errors.New(`name cannot containing repeating "-", "_" and "." characters`)
+		return InvalidNameError(`name cannot contain repeating "-", "_" and "." characters`)
 	}
 
 	return nil
-}
-
-func (n Name) String() string {
-	return string(n)
 }
 
 type Visibility string
@@ -73,12 +68,8 @@ const (
 
 func (v Visibility) IsValid() error {
 	if v != VisibilityPublic && v != VisibilityPrivate {
-		return errors.New("visibility is not valid, must be one of 'public', 'private'")
+		return ErrInvalidVisibility
 	}
 
 	return nil
-}
-
-func (v Visibility) String() string {
-	return string(v)
 }

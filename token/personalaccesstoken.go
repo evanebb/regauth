@@ -1,7 +1,6 @@
 package token
 
 import (
-	"errors"
 	"github.com/google/uuid"
 	"net"
 	"regexp"
@@ -35,15 +34,15 @@ var validDescription = regexp.MustCompile(`^[a-zA-Z0-9-_ ]+$`)
 func (d Description) IsValid() error {
 	l := len([]rune(d))
 	if l < 2 {
-		return errors.New("description cannot be shorter than 2 characters")
+		return InvalidDescriptionError("description cannot be shorter than 2 characters")
 	}
 
 	if l > 255 {
-		return errors.New("description cannot be longer than 255 characters")
+		return InvalidDescriptionError("description cannot be longer than 255 characters")
 	}
 
 	if !validDescription.MatchString(string(d)) {
-		return errors.New(`description can only contain alphanumeric characters, spaces, "-" and "_"`)
+		return InvalidDescriptionError(`description can only contain alphanumeric characters, spaces, "-" and "_"`)
 	}
 
 	return nil
@@ -59,7 +58,7 @@ const (
 
 func (p Permission) IsValid() error {
 	if p != PermissionReadOnly && p != PermissionReadWrite && p != PermissionReadWriteDelete {
-		return errors.New("permission is not valid, must be one of 'readOnly', 'readWrite', 'readWriteDelete'")
+		return ErrInvalidPermission
 	}
 
 	return nil

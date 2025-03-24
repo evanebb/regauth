@@ -54,12 +54,12 @@ func RepositoryParser(l *slog.Logger, repoStore repository.Store, teamStore user
 
 			authorized := false
 			for _, team := range teams {
-				if repo.Namespace == team.Name {
+				if repo.Namespace == string(team.Name) {
 					authorized = true
 				}
 			}
 
-			if repo.Namespace == u.Username.String() {
+			if repo.Namespace == string(u.Username) {
 				authorized = true
 			}
 
@@ -112,12 +112,12 @@ func CreateRepository(l *slog.Logger, repoStore repository.Store, teamStore user
 
 		authorized := false
 		for _, team := range teams {
-			if repo.Namespace == team.Name {
+			if repo.Namespace == string(team.Name) {
 				authorized = true
 			}
 		}
 
-		if repo.Namespace == u.Username.String() {
+		if repo.Namespace == string(u.Username) {
 			authorized = true
 		}
 
@@ -126,7 +126,7 @@ func CreateRepository(l *slog.Logger, repoStore repository.Store, teamStore user
 			return
 		}
 
-		_, err = repoStore.GetByNamespaceAndName(r.Context(), repo.Namespace, repo.Name.String())
+		_, err = repoStore.GetByNamespaceAndName(r.Context(), repo.Namespace, string(repo.Name))
 		if err == nil {
 			response.WriteJSONError(w, http.StatusBadRequest, "repository already exists")
 			return

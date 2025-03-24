@@ -47,7 +47,7 @@ type authorizer struct {
 func (a authorizer) AuthorizeAccess(ctx context.Context, u *user.User, p *token.PersonalAccessToken, requestedAccess Access) (Access, error) {
 	authorizedNamespaces := make(AuthorizedNamespaces)
 	if u != nil {
-		authorizedNamespaces.Add(u.Username.String())
+		authorizedNamespaces.Add(string(u.Username))
 
 		teams, err := a.teamStore.GetAllByUser(ctx, u.ID)
 		if err != nil {
@@ -55,7 +55,7 @@ func (a authorizer) AuthorizeAccess(ctx context.Context, u *user.User, p *token.
 		}
 
 		for _, team := range teams {
-			authorizedNamespaces.Add(team.Name)
+			authorizedNamespaces.Add(string(team.Name))
 		}
 	}
 

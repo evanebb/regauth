@@ -87,7 +87,7 @@ func CreateUser(l *slog.Logger, s user.Store) http.HandlerFunc {
 			return
 		}
 
-		_, err := s.GetByUsername(r.Context(), newUser.Username.String())
+		_, err := s.GetByUsername(r.Context(), string(newUser.Username))
 		if err == nil {
 			response.WriteJSONError(w, http.StatusBadRequest, "user already exists")
 			return
@@ -200,7 +200,7 @@ func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc 
 				// this user has no credentials yet, so let's just create them
 				authUser = local.AuthUser{
 					ID:       u.ID,
-					Username: u.Username.String(),
+					Username: string(u.Username),
 				}
 				createNew = true
 			} else {

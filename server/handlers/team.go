@@ -106,7 +106,7 @@ func CreateTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		_, err := s.GetByName(r.Context(), team.Name)
+		_, err := s.GetByName(r.Context(), string(team.Name))
 		if err == nil {
 			response.WriteJSONError(w, http.StatusBadRequest, "team already exists")
 			return

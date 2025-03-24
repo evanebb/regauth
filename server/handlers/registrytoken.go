@@ -53,7 +53,7 @@ func GenerateRegistryToken(
 
 			p = &lp
 			u = &lu
-			subject = u.Username.String()
+			subject = string(u.Username)
 		}
 
 		requestedAccess := parseScopes(r)
