@@ -1,27 +1,19 @@
 -- +goose Up
 -- +goose StatementBegin
 TRUNCATE users CASCADE;
-INSERT INTO users (uuid, username, role)
-VALUES ('4f42bc8c-4c92-4fe7-b2d6-31a425128870',
+INSERT INTO users (id, username, role, password_hash)
+VALUES ('0195cd11-2863-71d4-a3c4-032bc264cf81',
         'adminuser',
-        'admin'),
-       ('1a74e377-33f3-416f-88da-98fc16add21e',
+        'admin'
+            '$2y$12$sSMlPGBCt2RZnX5Od405T./kEwKZYtJoIhijrL1XXlwvr/BtPDtgS'),
+       ('0195cd11-2863-721e-a75c-86522539d0ee',
         'normaluser',
-        'user');
+        'user'
+            '$2y$12$rSVIBbxHKnfQnzeaJFfoouZuBeiyjSrxPyZIz/6L2CnrwScTYWJiq');
 
-INSERT INTO local_auth_users (uuid, username, password_hash)
-VALUES ('4f42bc8c-4c92-4fe7-b2d6-31a425128870',
-        'adminuser',
-           -- Welkom01!
-        '$2y$12$sSMlPGBCt2RZnX5Od405T./kEwKZYtJoIhijrL1XXlwvr/BtPDtgS'),
-       ('1a74e377-33f3-416f-88da-98fc16add21e',
-        'normaluser',
-           -- Welkom02!
-        '$2y$12$rSVIBbxHKnfQnzeaJFfoouZuBeiyjSrxPyZIz/6L2CnrwScTYWJiq');
-
-INSERT INTO namespaces (uuid, name, user_uuid)
-VALUES ('4a9e18f4-64aa-4972-a586-581f31504594', 'adminuser', '4f42bc8c-4c92-4fe7-b2d6-31a425128870'),
-       ('4970ce16-ceb2-4436-920b-e335fde10abe', 'normaluser', '1a74e377-33f3-416f-88da-98fc16add21e');
+INSERT INTO namespaces (uuid, name, user_id)
+VALUES ('0195cd11-2863-7226-9664-054d3cb1c752', 'adminuser', '0195cd11-2863-71d4-a3c4-032bc264cf81'),
+       ('0195cd11-2863-722a-b4d9-e7987725477b', 'normaluser', '0195cd11-2863-721e-a75c-86522539d0ee');
 -- +goose StatementEnd
 
 -- +goose Down

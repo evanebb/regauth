@@ -21,7 +21,7 @@ func NewPersonalAccessTokenStore(db *pgxpool.Pool) PersonalAccessTokenStore {
 func (s PersonalAccessTokenStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]token.PersonalAccessToken, error) {
 	var tokens []token.PersonalAccessToken
 
-	query := "SELECT uuid, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE user_uuid = $1"
+	query := "SELECT id, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE user_id = $1"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
 	defer rows.Close()
 	if err != nil {
@@ -54,7 +54,7 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (to
 	var t token.PersonalAccessToken
 	var pt string
 
-	query := "SELECT uuid, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE uuid = $1"
+	query := "SELECT id, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE id = $1"
 	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -71,7 +71,7 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (to
 func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plainTextToken string) (token.PersonalAccessToken, error) {
 	// Select all tokens of which the stored last eight characters match the plain-text token
 	lastEight := plainTextToken[len(plainTextToken)-8:]
-	query := "SELECT uuid, hash, description, permission, expiration_date, user_uuid FROM personal_access_tokens WHERE last_eight = $1"
+	query := "SELECT id, hash, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE last_eight = $1"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, lastEight)
 	defer rows.Close()
 	if err != nil {
@@ -115,13 +115,13 @@ func (s PersonalAccessTokenStore) Create(ctx context.Context, t token.PersonalAc
 	lastEight := plainTextToken[len(plainTextToken)-8:]
 	hash := auth.HashTokenWithRandomSalt(plainTextToken)
 
-	query := "INSERT INTO personal_access_tokens (uuid, hash, last_eight ,description, permission, expiration_date, user_uuid) VALUES ($1, $2, $3, $4, $5, $6, $7)"
+	query := "INSERT INTO personal_access_tokens (id, hash, last_eight ,description, permission, expiration_date, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, t.ID, hash, lastEight, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
 	return err
 }
 
 func (s PersonalAccessTokenStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
-	query := "DELETE FROM personal_access_tokens WHERE uuid = $1"
+	query := "DELETE FROM personal_access_tokens WHERE id = $1"
 	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, id)
 	return err
 }
@@ -129,7 +129,7 @@ func (s PersonalAccessTokenStore) DeleteByID(ctx context.Context, id uuid.UUID) 
 func (s PersonalAccessTokenStore) GetUsageLog(ctx context.Context, tokenID uuid.UUID) ([]token.UsageLogEntry, error) {
 	var log []token.UsageLogEntry
 
-	query := "SELECT token_uuid, source_ip, timestamp FROM personal_access_tokens_usage_log WHERE token_uuid = $1 ORDER BY timestamp DESC"
+	query := "SELECT token_id, source_ip, timestamp FROM personal_access_tokens_usage_log WHERE token_id = $1 ORDER BY timestamp DESC"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, tokenID)
 	defer rows.Close()
 	if err != nil {
@@ -151,7 +151,7 @@ func (s PersonalAccessTokenStore) GetUsageLog(ctx context.Context, tokenID uuid.
 }
 
 func (s PersonalAccessTokenStore) AddUsageLogEntry(ctx context.Context, e token.UsageLogEntry) error {
-	query := "INSERT INTO personal_access_tokens_usage_log (token_uuid, source_ip, timestamp) VALUES ($1, $2, $3)"
+	query := "INSERT INTO personal_access_tokens_usage_log (token_id, source_ip, timestamp) VALUES ($1, $2, $3)"
 	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, e.TokenID, e.SourceIP, e.Timestamp)
 	return err
 }

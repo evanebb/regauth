@@ -22,12 +22,12 @@ func (s TeamStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]user.T
 
 	query := `
 		SELECT
-			teams.uuid,
+			teams.id,
 			teams.name
 		FROM teams
-		JOIN team_members ON teams.uuid = team_members.team_uuid
-		JOIN users ON team_members.user_uuid = users.uuid
-		WHERE users.uuid = $1
+		JOIN team_members ON teams.id = team_members.team_id
+		JOIN users ON team_members.user_id = users.id
+		WHERE users.id = $1
 		`
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
 	defer rows.Close()
@@ -51,7 +51,7 @@ func (s TeamStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]user.T
 func (s TeamStore) GetByID(ctx context.Context, id uuid.UUID) (user.Team, error) {
 	var t user.Team
 
-	query := "SELECT uuid, name FROM teams WHERE uuid = $1"
+	query := "SELECT id, name FROM teams WHERE id = $1"
 	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&t.ID, &t.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -67,7 +67,7 @@ func (s TeamStore) GetByID(ctx context.Context, id uuid.UUID) (user.Team, error)
 func (s TeamStore) GetByName(ctx context.Context, name string) (user.Team, error) {
 	var t user.Team
 
-	query := "SELECT uuid, name FROM teams WHERE name = $1"
+	query := "SELECT id, name FROM teams WHERE name = $1"
 	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, name).Scan(&t.ID, &t.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -94,14 +94,20 @@ func (s TeamStore) Create(ctx context.Context, t user.Team) error {
 		return err
 	}
 
-	query := "INSERT INTO teams (uuid, name) VALUES ($1, $2)"
+	query := "INSERT INTO teams (id, name) VALUES ($1, $2)"
 	if _, err := tx.Exec(ctx, query, t.ID, t.Name); err != nil {
 		_ = tx.Rollback(ctx)
 		return err
 	}
 
-	nsQuery := "INSERT INTO namespaces (uuid, name, team_uuid) VALUES ($1, $2, $3)"
-	if _, err := tx.Exec(ctx, nsQuery, uuid.New(), t.Name, t.ID); err != nil {
+	nsId, err := uuid.NewV7()
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		return err
+	}
+
+	nsQuery := "INSERT INTO namespaces (id, name, team_id) VALUES ($1, $2, $3)"
+	if _, err := tx.Exec(ctx, nsQuery, nsId, t.Name, t.ID); err != nil {
 		_ = tx.Rollback(ctx)
 		return err
 	}
@@ -111,7 +117,7 @@ func (s TeamStore) Create(ctx context.Context, t user.Team) error {
 }
 
 func (s TeamStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
-	query := "DELETE FROM teams WHERE uuid = $1"
+	query := "DELETE FROM teams WHERE id = $1"
 	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, id)
 	return err
 }
@@ -121,15 +127,16 @@ func (s TeamStore) GetTeamMember(ctx context.Context, teamID uuid.UUID, userID u
 
 	query := `
 		SELECT
-			team_members.user_uuid,
-			team_members.team_uuid,
+			team_members.user_id,
+			team_members.team_id,
 			users.username,
 			team_members.role
 		FROM team_members
-		JOIN users ON team_members.user_uuid = users.uuid
-		WHERE users.uuid = $1
+		JOIN users ON team_members.user_id = users.id
+		WHERE team_id = $1
+		AND users.id = $2
 		`
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, userID).Scan(&tm.UserID, &tm.TeamID, &tm.Username, &tm.Role)
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, teamID, userID).Scan(&tm.UserID, &tm.TeamID, &tm.Username, &tm.Role)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return tm, user.ErrTeamMemberNotFound
@@ -146,14 +153,14 @@ func (s TeamStore) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]user
 
 	query := `
 		SELECT
-			team_members.user_uuid,
-			team_members.team_uuid,
+			team_members.user_id,
+			team_members.team_id,
 			users.username,
 			team_members.role
 		FROM team_members
-		JOIN teams ON team_members.team_uuid = teams.uuid
-		JOIN users ON team_members.user_uuid = users.uuid
-		WHERE teams.uuid = $1
+		JOIN teams ON team_members.team_id = teams.id
+		JOIN users ON team_members.user_id = users.id
+		WHERE teams.id = $1
 		`
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, teamID)
 	defer rows.Close()
@@ -175,13 +182,13 @@ func (s TeamStore) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]user
 }
 
 func (s TeamStore) AddTeamMember(ctx context.Context, m user.TeamMember) error {
-	query := "INSERT INTO team_members (user_uuid, team_uuid, role) VALUES ($1, $2, $3)"
+	query := "INSERT INTO team_members (user_id, team_id, role) VALUES ($1, $2, $3)"
 	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, m.UserID, m.TeamID, m.Role)
 	return err
 }
 
 func (s TeamStore) RemoveTeamMember(ctx context.Context, teamID uuid.UUID, userID uuid.UUID) error {
-	query := "DELETE FROM team_members WHERE team_uuid = $1 AND user_uuid = $2"
+	query := "DELETE FROM team_members WHERE team_id = $1 AND user_id = $2"
 	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, teamID, userID)
 	return err
 }

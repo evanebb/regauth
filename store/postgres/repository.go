@@ -22,18 +22,18 @@ func (s RepositoryStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]
 
 	query := `
 		SELECT
-			repositories.uuid,
+			repositories.id,
 			namespaces.name as namespace,
 			repositories.name,
 			repositories.visibility
 		FROM repositories
-		JOIN namespaces ON repositories.namespace = namespaces.uuid
-		WHERE namespaces.user_uuid = $1
-		OR namespaces.team_uuid IN (
-			SELECT uuid
+		JOIN namespaces ON repositories.namespace_id = namespaces.id
+		WHERE namespaces.user_id = $1
+		OR namespaces.team_id IN (
+			SELECT teams.id
 			FROM teams
-			JOIN team_members ON teams.uuid = team_members.team_uuid
-			WHERE team_members.user_uuid = $1
+			JOIN team_members ON teams.id = team_members.team_id
+			WHERE team_members.user_id = $1
 		)
 		`
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
@@ -66,12 +66,12 @@ func (s RepositoryStore) GetByNamespaceAndName(ctx context.Context, namespace st
 
 	query := `
 		SELECT
-			repositories.uuid,
+			repositories.id,
 			namespaces.name as namespace,
 			repositories.name,
 			repositories.visibility
 		FROM repositories
-		JOIN namespaces ON repositories.namespace = namespaces.uuid
+		JOIN namespaces ON repositories.namespace_id = namespaces.id
 		WHERE namespaces.name = $1 AND repositories.name = $2
 		`
 	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, namespace, name).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
@@ -91,13 +91,13 @@ func (s RepositoryStore) GetByID(ctx context.Context, id uuid.UUID) (repository.
 
 	query := `
 		SELECT
-			repositories.uuid,
+			repositories.id,
 			namespaces.name as namespace,
 			repositories.name,
 			repositories.visibility
 		FROM repositories
-		JOIN namespaces ON repositories.namespace = namespaces.uuid
-		WHERE repositories.uuid = $1
+		JOIN namespaces ON repositories.namespace_id = namespaces.id
+		WHERE repositories.id = $1
 		`
 	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
 	if err != nil {
@@ -121,8 +121,8 @@ func (s RepositoryStore) Create(ctx context.Context, r repository.Repository) er
 	}
 
 	query := `
-		INSERT INTO repositories (uuid, namespace, name, visibility)
-		SELECT $1, uuid, $2, $3
+		INSERT INTO repositories (id, namespace_id, name, visibility)
+		SELECT $1, id, $2, $3
 		FROM namespaces
 		WHERE name = $4
 		`
@@ -132,7 +132,7 @@ func (s RepositoryStore) Create(ctx context.Context, r repository.Repository) er
 }
 
 func (s RepositoryStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
-	query := "DELETE FROM repositories WHERE uuid = $1"
+	query := "DELETE FROM repositories WHERE id = $1"
 	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, id)
 	return err
 }

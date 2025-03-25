@@ -2,20 +2,20 @@
 -- +goose StatementBegin
 TRUNCATE repositories;
 INSERT INTO repositories (uuid, namespace, name, visibility)
-VALUES ('51151395-897d-4b9b-822b-a0c8796178cf',
-        '4a9e18f4-64aa-4972-a586-581f31504594',
+VALUES ('0195cd13-ba14-76fd-b43e-55f190e566bd',
+        '0195cd11-2863-7226-9664-054d3cb1c752',
         'public-image',
         'public'),
-       ('0c4e0de5-14b8-4719-9ccd-4bc73f742c65',
-        '4a9e18f4-64aa-4972-a586-581f31504594',
+       ('0195cd13-ba14-7728-9e48-d51b8578ea53',
+        '0195cd11-2863-7226-9664-054d3cb1c752',
         'private-image',
         'private'),
-       ('db5bda5a-e7b9-4bde-91b9-fe3bcd687f63',
-        '4970ce16-ceb2-4436-920b-e335fde10abe',
+       ('0195cd13-ba14-779d-8960-bc20595f515e',
+        '0195cd11-2863-722a-b4d9-e7987725477b',
         'public-image',
         'public'),
-       ('c89f0494-f9f8-419c-bc58-07949afcc7f1',
-        '4970ce16-ceb2-4436-920b-e335fde10abe',
+       ('0195cd13-ba14-77a5-bec6-46a26a17ad2d',
+        '0195cd11-2863-722a-b4d9-e7987725477b',
         'private-image',
         'private');
 -- +goose StatementEnd
