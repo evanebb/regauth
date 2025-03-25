@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 TRUNCATE repositories;
-INSERT INTO repositories (uuid, namespace, name, visibility)
+INSERT INTO repositories (id, namespace_id, name, visibility)
 VALUES ('0195cd13-ba14-76fd-b43e-55f190e566bd',
         '0195cd11-2863-7226-9664-054d3cb1c752',
         'public-image',
