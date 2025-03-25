@@ -138,7 +138,12 @@ func CreateRepository(l *slog.Logger, repoStore repository.Store, teamStore user
 			return
 		}
 
-		repo.ID = uuid.New()
+		repo.ID, err = uuid.NewV7()
+		if err != nil {
+			l.Error("could not generate UUID", "error", err)
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
 
 		if err := repo.IsValid(); err != nil {
 			response.WriteJSONError(w, http.StatusBadRequest, err.Error())

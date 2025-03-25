@@ -99,7 +99,12 @@ func CreateUser(l *slog.Logger, s user.Store) http.HandlerFunc {
 			return
 		}
 
-		newUser.ID = uuid.New()
+		newUser.ID, err = uuid.NewV7()
+		if err != nil {
+			l.Error("could not generate UUID", "error", err)
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
 
 		if err := newUser.IsValid(); err != nil {
 			response.WriteJSONError(w, http.StatusBadRequest, err.Error())

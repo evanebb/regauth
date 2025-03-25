@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"strings"
 	"testing"
 )
@@ -14,9 +13,9 @@ func TestRepository_IsValid(t *testing.T) {
 		repo Repository
 		err  error
 	}{
-		{"valid repository", Repository{ID: uuid.New(), Namespace: "namespace", Name: Name("name"), Visibility: VisibilityPrivate}, nil},
-		{"invalid name", Repository{ID: uuid.New(), Namespace: "namespace", Name: Name("a"), Visibility: VisibilityPrivate}, InvalidNameError("name cannot be shorter than 2 characters")},
-		{"invalid visibility", Repository{ID: uuid.New(), Namespace: "namespace", Name: Name("name"), Visibility: Visibility("invalid")}, ErrInvalidVisibility},
+		{"valid repository", Repository{Namespace: "namespace", Name: Name("name"), Visibility: VisibilityPrivate}, nil},
+		{"invalid name", Repository{Namespace: "namespace", Name: Name("a"), Visibility: VisibilityPrivate}, InvalidNameError("name cannot be shorter than 2 characters")},
+		{"invalid visibility", Repository{Namespace: "namespace", Name: Name("name"), Visibility: Visibility("invalid")}, ErrInvalidVisibility},
 	}
 
 	for _, c := range testCases {

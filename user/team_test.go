@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"github.com/google/uuid"
 	"strings"
 	"testing"
 )
@@ -13,8 +12,8 @@ func TestTeam_IsValid(t *testing.T) {
 		team Team
 		err  error
 	}{
-		{"valid team", Team{ID: uuid.New(), Name: TeamName("team")}, nil},
-		{"invalid name", Team{ID: uuid.New(), Name: TeamName("a")}, InvalidTeamNameError("team name cannot be shorter than 2 characters")},
+		{"valid team", Team{Name: TeamName("team")}, nil},
+		{"invalid name", Team{Name: TeamName("a")}, InvalidTeamNameError("team name cannot be shorter than 2 characters")},
 	}
 
 	for _, c := range testCases {
@@ -55,9 +54,9 @@ func TestTeamMember_IsValid(t *testing.T) {
 		member TeamMember
 		err    error
 	}{
-		{"valid user", TeamMember{UserID: uuid.New(), TeamID: uuid.New(), Username: Username("username"), Role: TeamMemberRoleAdmin}, nil},
-		{"invalid username", TeamMember{UserID: uuid.New(), TeamID: uuid.New(), Username: Username("a"), Role: TeamMemberRoleAdmin}, InvalidUsernameError("username cannot be shorter than 2 characters")},
-		{"invalid role", TeamMember{UserID: uuid.New(), TeamID: uuid.New(), Username: Username("username"), Role: TeamMemberRole("invalid")}, ErrInvalidTeamMemberRole},
+		{"valid user", TeamMember{Username: Username("username"), Role: TeamMemberRoleAdmin}, nil},
+		{"invalid username", TeamMember{Username: Username("a"), Role: TeamMemberRoleAdmin}, InvalidUsernameError("username cannot be shorter than 2 characters")},
+		{"invalid role", TeamMember{Username: Username("username"), Role: TeamMemberRole("invalid")}, ErrInvalidTeamMemberRole},
 	}
 
 	for _, c := range testCases {

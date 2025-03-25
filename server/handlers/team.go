@@ -118,7 +118,12 @@ func CreateTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 			return
 		}
 
-		team.ID = uuid.New()
+		team.ID, err = uuid.NewV7()
+		if err != nil {
+			l.Error("could not generate UUID", "error", err)
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
 
 		member := user.TeamMember{
 			UserID:   u.ID,

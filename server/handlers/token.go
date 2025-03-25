@@ -90,7 +90,14 @@ func CreateToken(l *slog.Logger, s token.Store) http.HandlerFunc {
 			return
 		}
 
-		pat.ID = uuid.New()
+		var err error
+		pat.ID, err = uuid.NewV7()
+		if err != nil {
+			l.Error("could not generate UUID", "error", err)
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
 		pat.UserID = u.ID
 
 		if err := pat.IsValid(); err != nil {

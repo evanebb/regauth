@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"github.com/google/uuid"
 	"strings"
 	"testing"
 )
@@ -13,9 +12,9 @@ func TestUser_IsValid(t *testing.T) {
 		user User
 		err  error
 	}{
-		{"valid user", User{ID: uuid.New(), Username: Username("username"), Role: RoleAdmin}, nil},
-		{"invalid username", User{ID: uuid.New(), Username: Username("a"), Role: RoleAdmin}, InvalidUsernameError("username cannot be shorter than 2 characters")},
-		{"invalid role", User{ID: uuid.New(), Username: Username("username"), Role: Role("invalid")}, ErrInvalidRole},
+		{"valid user", User{Username: Username("username"), Role: RoleAdmin}, nil},
+		{"invalid username", User{Username: Username("a"), Role: RoleAdmin}, InvalidUsernameError("username cannot be shorter than 2 characters")},
+		{"invalid role", User{Username: Username("username"), Role: Role("invalid")}, ErrInvalidRole},
 	}
 
 	for _, c := range testCases {
