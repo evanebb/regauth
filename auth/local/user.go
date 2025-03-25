@@ -5,17 +5,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthUser struct {
-	ID           uuid.UUID
-	Username     string
+type UserCredentials struct {
+	UserID       uuid.UUID
 	PasswordHash []byte
 }
 
-func (u *AuthUser) CheckPassword(password string) error {
-	return bcrypt.CompareHashAndPassword(u.PasswordHash, []byte(password))
+func (c *UserCredentials) CheckPassword(password string) error {
+	return bcrypt.CompareHashAndPassword(c.PasswordHash, []byte(password))
 }
 
-func (u *AuthUser) SetPassword(password string) error {
+func (c *UserCredentials) SetPassword(password string) error {
 	// note: this should probably be even stricter :)
 	if len(password) <= 8 {
 		return ErrWeakPassword
@@ -26,6 +25,6 @@ func (u *AuthUser) SetPassword(password string) error {
 		return err
 	}
 
-	u.PasswordHash = passwordBytes
+	c.PasswordHash = passwordBytes
 	return nil
 }

@@ -90,7 +90,7 @@ func TokenAuthentication(
 	}
 }
 
-func UsernamePasswordAuthentication(l *slog.Logger, userStore user.Store, authUserStore local.AuthUserStore) func(next http.Handler) http.Handler {
+func UsernamePasswordAuthentication(l *slog.Logger, userStore user.Store, credentialsStore local.UserCredentialsStore) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			// check if the user is already set in the request; if so, we do not have to do anything
@@ -107,32 +107,35 @@ func UsernamePasswordAuthentication(l *slog.Logger, userStore user.Store, authUs
 				return
 			}
 
-			authUser, err := authUserStore.GetByUsername(r.Context(), username)
+			u, err := userStore.GetByUsername(r.Context(), username)
 			if err != nil {
-				if errors.Is(err, local.ErrUserNotFound) {
-					l.DebugContext(r.Context(), "auth user not found", slog.String("username", username))
+				if errors.Is(err, user.ErrNotFound) {
+					l.DebugContext(r.Context(), "user not found", slog.String("username", username))
 					response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
 					return
 				}
 
-				l.ErrorContext(r.Context(), "could not get auth user",
-					slog.Any("error", err),
-					slog.String("username", username))
-				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-				return
-			}
-
-			if err := authUser.CheckPassword(password); err != nil {
-				l.DebugContext(r.Context(), "password does not match", slog.String("username", username))
-				response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
-				return
-			}
-
-			u, err := userStore.GetByID(r.Context(), authUser.ID)
-			if err != nil {
-				// the user should always exist at this point, so this is an error
 				l.ErrorContext(r.Context(), "could not get user", slog.Any("error", err))
 				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+				return
+			}
+
+			credentials, err := credentialsStore.GetByUserID(r.Context(), u.ID)
+			if err != nil {
+				if errors.Is(err, user.ErrNotFound) {
+					l.DebugContext(r.Context(), "no credentials set for user", slog.String("username", username))
+					response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
+					return
+				}
+
+				l.ErrorContext(r.Context(), "could not get credentials", slog.Any("error", err))
+				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+				return
+			}
+
+			if err := credentials.CheckPassword(password); err != nil {
+				l.DebugContext(r.Context(), "password does not match", slog.String("username", username))
+				response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
 				return
 			}
 

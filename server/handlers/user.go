@@ -177,7 +177,7 @@ type userPasswordChangeRequest struct {
 	Password string `json:"password"`
 }
 
-func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc {
+func ChangeUserPassword(l *slog.Logger, s local.UserCredentialsStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req userPasswordChangeRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -192,25 +192,8 @@ func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc 
 			return
 		}
 
-		var createNew bool
-
-		authUser, err := s.GetByID(r.Context(), u.ID)
-		if err != nil {
-			if errors.Is(err, local.ErrUserNotFound) {
-				// this user has no credentials yet, so let's just create them
-				authUser = local.AuthUser{
-					ID:       u.ID,
-					Username: string(u.Username),
-				}
-				createNew = true
-			} else {
-				l.ErrorContext(r.Context(), "could not get auth user", slog.Any("error", err))
-				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-				return
-			}
-		}
-
-		if err := authUser.SetPassword(req.Password); err != nil {
+		credentials := local.UserCredentials{UserID: u.ID}
+		if err := credentials.SetPassword(req.Password); err != nil {
 			if errors.Is(err, local.ErrWeakPassword) {
 				response.WriteJSONError(w, http.StatusBadRequest, err.Error())
 				return
@@ -221,14 +204,8 @@ func ChangeUserPassword(l *slog.Logger, s local.AuthUserStore) http.HandlerFunc 
 			return
 		}
 
-		if createNew {
-			err = s.Create(r.Context(), authUser)
-		} else {
-			err = s.Update(r.Context(), authUser)
-		}
-
-		if err != nil {
-			l.ErrorContext(r.Context(), "could not update password for auth user", slog.Any("error", err))
+		if err := s.Save(r.Context(), credentials); err != nil {
+			l.ErrorContext(r.Context(), "could not update user credentials", slog.Any("error", err))
 			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 			return
 		}

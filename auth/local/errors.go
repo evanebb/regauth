@@ -3,7 +3,6 @@ package local
 import "errors"
 
 var (
-	ErrUserNotFound      = errors.New("auth user not found")
-	ErrUserAlreadyExists = errors.New("auth user already exists, cannot create it again")
-	ErrWeakPassword      = errors.New("password is too weak, must be at least 8 characters")
+	ErrNoCredentials = errors.New("no credentials found for user")
+	ErrWeakPassword  = errors.New("password is too weak, must be at least 8 characters")
 )

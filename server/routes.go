@@ -21,7 +21,7 @@ func baseRouter(
 	userStore user.Store,
 	teamStore user.TeamStore,
 	tokenStore token.Store,
-	authUserStore local.AuthUserStore,
+	credentialsStore local.UserCredentialsStore,
 	authenticator auth.Authenticator,
 	authorizer auth.Authorizer,
 	accessTokenConfig auth.AccessTokenConfiguration,
@@ -41,7 +41,7 @@ func baseRouter(
 
 	r.Handle("/token", handlers.GenerateRegistryToken(logger, authenticator, authorizer, accessTokenConfig))
 
-	r.Mount("/v1", v1ApiRouter(logger, repoStore, userStore, teamStore, tokenStore, authUserStore))
+	r.Mount("/v1", v1ApiRouter(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore))
 
 	return r
 }
@@ -52,7 +52,7 @@ func v1ApiRouter(
 	userStore user.Store,
 	teamStore user.TeamStore,
 	tokenStore token.Store,
-	authUserStore local.AuthUserStore,
+	credentialsStore local.UserCredentialsStore,
 ) chi.Router {
 	r := chi.NewRouter()
 
@@ -76,7 +76,7 @@ func v1ApiRouter(
 	r.Route("/tokens", func(r chi.Router) {
 		// special case: since this is a fully API-driven application, users can create personal access tokens using
 		// their username and password. Otherwise there would be no way for a user to access the rest of the API :)
-		userPassMiddleware := middleware.UsernamePasswordAuthentication(logger, userStore, authUserStore)
+		userPassMiddleware := middleware.UsernamePasswordAuthentication(logger, userStore, credentialsStore)
 		r.With(userPassMiddleware).Post("/", handlers.CreateToken(logger, tokenStore))
 
 		r.Get("/", handlers.ListTokens(logger, tokenStore))
@@ -111,7 +111,7 @@ func v1ApiRouter(
 			r.Use(handlers.UserParser(logger, userStore))
 			r.Get("/", handlers.GetUser(logger))
 			r.Delete("/", handlers.DeleteUser(logger, userStore))
-			r.Post("/password", handlers.ChangeUserPassword(logger, authUserStore))
+			r.Post("/password", handlers.ChangeUserPassword(logger, credentialsStore))
 		})
 	})
 
