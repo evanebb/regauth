@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/evanebb/regauth/oas"
+	"github.com/fatih/color"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
@@ -119,12 +120,12 @@ func newCreateTokenCommand(client *oas.Client, credentialStore CredentialStore) 
 				if err := logInUsingToken(credentialStore, res.Token); err != nil {
 					fmt.Println("could not log in using new token: " + err.Error())
 				} else {
-					fmt.Println("logged in using new token")
+					fmt.Println("logged in using new token!")
 				}
 			}
 
-			fmt.Println("new personal access token: " + res.Token)
-			fmt.Println("make sure to copy this token immediately! it cannot be retrieved afterwards")
+			fmt.Println("new personal access token: " + color.New(color.FgGreen, color.Bold).Sprint(res.Token))
+			fmt.Println("make sure to copy this token immediately! it cannot be retrieved afterwards.")
 			return nil
 		},
 	}
