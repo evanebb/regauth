@@ -6,12 +6,13 @@ import (
 )
 
 type Configuration struct {
-	Log      Log
-	HTTP     HTTP
-	Database Database
-	Token    Token
-	Auth     Auth
-	Registry Registry
+	InitialAdmin InitialAdmin
+	Log          Log
+	HTTP         HTTP
+	Database     Database
+	Token        Token
+	Auth         Auth
+	Registry     Registry
 }
 
 // SetDefaults sets the defaults for the configuration on a viper.Viper instance.
@@ -35,6 +36,11 @@ func (c Configuration) IsValid() error {
 	}
 
 	return nil
+}
+
+type InitialAdmin struct {
+	Username string
+	Password string
 }
 
 type Log struct {

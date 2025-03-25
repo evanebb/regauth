@@ -1,3 +1,9 @@
+# Initial admin username/password
+# This will only have an effect during the first application startup, and should be removed afterward
+initialadmin:
+  username: admin
+  password: admin
+
 # Logging configuration
 log:
   # 'debug', 'info', 'warn' or 'error'. Defaults to 'info'

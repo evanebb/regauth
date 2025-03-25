@@ -21,6 +21,8 @@ services:
       - ./keys/cert.pem:/etc/regauth/cert.pem:ro
       - ./keys/key.pem:/etc/regauth/key.pem:ro
     environment:
+      REGAUTH_INITIALADMIN_USERNAME: admin
+      REGAUTH_INITIALADMIN_PASSWORD: admin
       REGAUTH_LOG_LEVEL: debug
       REGAUTH_DATABASE_HOST: postgres
       REGAUTH_DATABASE_NAME: regauth

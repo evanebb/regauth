@@ -10,6 +10,7 @@ import (
 	"github.com/evanebb/regauth/auth"
 	"github.com/evanebb/regauth/configuration"
 	"github.com/evanebb/regauth/resources/database"
+	"github.com/evanebb/regauth/resources/database/migrations"
 	"github.com/evanebb/regauth/store/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -37,6 +38,9 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 		return err
 	}
 
+	// this is a special migration to create the initial admin user from the configuration, so it isn't a plain-text
+	// SQL migration and requires the configuration
+	migrations.RegisterInitialAdminMigration(conf)
 	goose.SetBaseFS(database.Files)
 	err = goose.SetDialect("postgres")
 	if err != nil {

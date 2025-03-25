@@ -1,3 +1,7 @@
+initialadmin:
+  username: admin
+  password: admin
+
 log:
   level: debug
   format: text

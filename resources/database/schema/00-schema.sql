@@ -8,10 +8,6 @@ CREATE TABLE users
     role          user_role           NOT NULL
 );
 
-INSERT INTO users (id, username, role, password_hash)
-VALUES ('0195cd0c-2392-7e96-bb98-a2878ca2dae0', 'admin', 'admin',
-        '$2y$12$9tWON20iFLgRxqfr4YkaYObrSHlSbgDLlWjXnu0tzom4EvPo35vmS');
-
 CREATE TABLE teams
 (
     id   uuid PRIMARY KEY    NOT NULL,
@@ -36,9 +32,6 @@ CREATE TABLE namespaces
     user_id uuid REFERENCES users ON DELETE CASCADE,
     team_id uuid REFERENCES teams ON DELETE CASCADE
 );
-
-INSERT INTO namespaces (id, name, user_id)
-VALUES ('0195cd0c-2392-7ee8-9269-ca6976d1b5a1', 'admin', '0195cd0c-2392-7e96-bb98-a2878ca2dae0');
 
 CREATE TYPE repository_visibility AS ENUM ('public', 'private');
 
