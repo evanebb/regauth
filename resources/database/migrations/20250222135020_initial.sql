@@ -4,7 +4,7 @@ CREATE TYPE user_role AS ENUM ('admin', 'user');
 
 CREATE TABLE users
 (
-    id            uuid PRIMARY KEY    NOT NULL,
+    id            uuid PRIMARY KEY,
     username      varchar(255) UNIQUE NOT NULL,
     password_hash varchar(255),
     role          user_role           NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE users
 
 CREATE TABLE teams
 (
-    id         uuid PRIMARY KEY    NOT NULL,
+    id         uuid PRIMARY KEY,
     name       varchar(255) UNIQUE NOT NULL,
     created_at timestamptz         NOT NULL DEFAULT now()
 );
@@ -32,7 +32,7 @@ CREATE TABLE team_members
 
 CREATE TABLE namespaces
 (
-    id         uuid PRIMARY KEY    NOT NULL,
+    id         bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name       varchar(255) UNIQUE NOT NULL,
     user_id    uuid REFERENCES users ON DELETE CASCADE,
     team_id    uuid REFERENCES teams ON DELETE CASCADE,
@@ -43,11 +43,11 @@ CREATE TYPE repository_visibility AS ENUM ('public', 'private');
 
 CREATE TABLE repositories
 (
-    id           uuid PRIMARY KEY                             NOT NULL,
-    namespace_id uuid REFERENCES namespaces ON DELETE CASCADE NOT NULL,
-    name         varchar(255)                                 NOT NULL,
-    visibility   repository_visibility                        NOT NULL,
-    created_at   timestamptz                                  NOT NULL DEFAULT now(),
+    id           uuid PRIMARY KEY,
+    namespace_id bigint REFERENCES namespaces ON DELETE CASCADE NOT NULL,
+    name         varchar(255)                                   NOT NULL,
+    visibility   repository_visibility                          NOT NULL,
+    created_at   timestamptz                                    NOT NULL DEFAULT now(),
     UNIQUE (namespace_id, name)
 );
 
@@ -55,7 +55,7 @@ CREATE TYPE token_permission AS ENUM ('read_only', 'read_write', 'read_write_del
 
 CREATE TABLE personal_access_tokens
 (
-    id              uuid PRIMARY KEY                        NOT NULL,
+    id              uuid PRIMARY KEY,
     hash            varchar                                 NOT NULL,
     last_eight      varchar(8)                              NOT NULL,
     description     varchar(255)                            NOT NULL,

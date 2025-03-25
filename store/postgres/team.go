@@ -100,14 +100,8 @@ func (s TeamStore) Create(ctx context.Context, t user.Team) error {
 		return err
 	}
 
-	nsId, err := uuid.NewV7()
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		return err
-	}
-
-	nsQuery := "INSERT INTO namespaces (id, name, team_id) VALUES ($1, $2, $3)"
-	if _, err := tx.Exec(ctx, nsQuery, nsId, t.Name, t.ID); err != nil {
+	nsQuery := "INSERT INTO namespaces (name, team_id) VALUES ($1, $2)"
+	if _, err := tx.Exec(ctx, nsQuery, t.Name, t.ID); err != nil {
 		_ = tx.Rollback(ctx)
 		return err
 	}

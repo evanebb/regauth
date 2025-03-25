@@ -6,16 +6,16 @@ VALUES ('0195cd11-2863-71d4-a3c4-032bc264cf81',
         'adminuser',
         'admin',
            -- Welkom01!
-            '$2y$12$sSMlPGBCt2RZnX5Od405T./kEwKZYtJoIhijrL1XXlwvr/BtPDtgS'),
+        '$2y$12$sSMlPGBCt2RZnX5Od405T./kEwKZYtJoIhijrL1XXlwvr/BtPDtgS'),
        ('0195cd11-2863-721e-a75c-86522539d0ee',
         'normaluser',
         'user',
            -- Welkom02!
-            '$2y$12$rSVIBbxHKnfQnzeaJFfoouZuBeiyjSrxPyZIz/6L2CnrwScTYWJiq');
+        '$2y$12$rSVIBbxHKnfQnzeaJFfoouZuBeiyjSrxPyZIz/6L2CnrwScTYWJiq');
 
-INSERT INTO namespaces (id, name, user_id)
-VALUES ('0195cd11-2863-7226-9664-054d3cb1c752', 'adminuser', '0195cd11-2863-71d4-a3c4-032bc264cf81'),
-       ('0195cd11-2863-722a-b4d9-e7987725477b', 'normaluser', '0195cd11-2863-721e-a75c-86522539d0ee');
+INSERT INTO namespaces (name, user_id)
+VALUES ('adminuser', '0195cd11-2863-71d4-a3c4-032bc264cf81'),
+       ('normaluser', '0195cd11-2863-721e-a75c-86522539d0ee');
 -- +goose StatementEnd
 
 -- +goose Down

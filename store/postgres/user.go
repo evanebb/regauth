@@ -98,14 +98,8 @@ func (s UserStore) Create(ctx context.Context, u user.User) error {
 		return err
 	}
 
-	nsId, err := uuid.NewV7()
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		return err
-	}
-
-	nsQuery := "INSERT INTO namespaces (id, name, user_id) VALUES ($1, $2, $3)"
-	if _, err := tx.Exec(ctx, nsQuery, nsId, u.Username, u.ID); err != nil {
+	nsQuery := "INSERT INTO namespaces (name, user_id) VALUES ($1, $2)"
+	if _, err := tx.Exec(ctx, nsQuery, u.Username, u.ID); err != nil {
 		_ = tx.Rollback(ctx)
 		return err
 	}
