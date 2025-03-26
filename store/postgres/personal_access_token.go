@@ -71,7 +71,7 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (to
 func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plainTextToken string) (token.PersonalAccessToken, error) {
 	if len(plainTextToken) < 8 {
 		// avoid slice out of bounds error by checking the length first
-		return token.PersonalAccessToken{}, errors.New("invalid token given, too short")
+		return token.PersonalAccessToken{}, ErrTokenTooShort
 	}
 
 	// Select all tokens of which the stored last eight characters match the plain-text token
