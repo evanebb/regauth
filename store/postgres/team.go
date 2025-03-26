@@ -176,8 +176,16 @@ func (s TeamStore) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]user
 }
 
 func (s TeamStore) AddTeamMember(ctx context.Context, m user.TeamMember) error {
+	_, err := s.GetTeamMember(ctx, m.TeamID, m.UserID)
+	if err == nil {
+		return user.ErrTeamMemberAlreadyExists
+	}
+	if !errors.Is(err, user.ErrTeamMemberNotFound) {
+		return err
+	}
+
 	query := "INSERT INTO team_members (user_id, team_id, role) VALUES ($1, $2, $3)"
-	_, err := s.QuerierFromContext(ctx).Exec(ctx, query, m.UserID, m.TeamID, m.Role)
+	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, m.UserID, m.TeamID, m.Role)
 	return err
 }
 
