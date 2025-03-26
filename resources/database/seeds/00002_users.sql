@@ -1,6 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
-TRUNCATE users CASCADE;
 INSERT INTO users (id, username, role, password_hash)
 VALUES ('0195cd11-2863-71d4-a3c4-032bc264cf81',
         'adminuser',
@@ -20,5 +19,4 @@ VALUES ('adminuser', '0195cd11-2863-71d4-a3c4-032bc264cf81'),
 
 -- +goose Down
 -- +goose StatementBegin
-TRUNCATE users CASCADE;
 -- +goose StatementEnd

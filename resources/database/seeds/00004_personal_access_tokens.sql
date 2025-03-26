@@ -1,6 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
-TRUNCATE personal_access_tokens CASCADE;
 INSERT INTO personal_access_tokens (id, hash, last_eight, description, permission, expiration_date, user_id)
 VALUES ('0195cd16-2142-78e5-8425-a8db7acbc8f8',
            -- registry_pat_SVV_otfQNmSjo7viDiCrC0AKe6Qa_iFhxXJBZE1vMOByC9nbUtBPsz3r
@@ -26,9 +25,14 @@ VALUES ('0195cd16-2142-78e5-8425-a8db7acbc8f8',
         'read_write_delete',
         '2045-03-25 12:16:33.110405+00',
         '0195cd11-2863-71d4-a3c4-032bc264cf81');
+
+INSERT INTO personal_access_tokens_usage_log (token_id, source_ip, timestamp)
+VALUES ('0195cd16-2142-78e5-8425-a8db7acbc8f8', '192.168.1.10', '2045-03-26 12:16:33.110405+00'),
+       ('0195cd16-2142-78e5-8425-a8db7acbc8f8', '192.168.1.11', '2045-03-27 12:16:33.110405+00'),
+       ('0195cd16-2142-78e5-8425-a8db7acbc8f8', '192.168.1.12', '2045-03-28 12:16:33.110405+00');
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-TRUNCATE personal_access_tokens CASCADE;
 -- +goose StatementEnd

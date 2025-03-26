@@ -1,7 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
-TRUNCATE repositories;
-
 INSERT INTO repositories (id, namespace_id, name, visibility)
 SELECT '0195cd13-ba14-76fd-b43e-55f190e566bd', id, 'public-image', 'public'
 FROM namespaces
@@ -25,5 +23,4 @@ WHERE name = 'normaluser';
 
 -- +goose Down
 -- +goose StatementBegin
-TRUNCATE repositories;
 -- +goose StatementEnd
