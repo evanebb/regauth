@@ -29,7 +29,7 @@ func (s *TeamStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]user.
 	defer s.mu.RUnlock()
 
 	for teamID, members := range s.teamMembers {
-		for memberUserID, _ := range members {
+		for memberUserID := range members {
 			if memberUserID != userID {
 				continue
 			}
