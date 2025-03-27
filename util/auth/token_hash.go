@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
-	"errors"
 )
 
 // TODO: double-check whether this is locked down enough...
@@ -61,5 +60,5 @@ func CompareTokenAndHash(token string, hash []byte) error {
 		return nil
 	}
 
-	return errors.New("token and hash do not match")
+	return ErrHashDoesNotMatch
 }
