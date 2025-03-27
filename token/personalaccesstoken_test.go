@@ -2,6 +2,7 @@ package token
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -72,6 +73,37 @@ func TestPermission_IsValid(t *testing.T) {
 			err := Permission(c.permission).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
+			}
+		})
+	}
+}
+
+func TestPermission_GetAllowedActions(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		permission Permission
+		expected   []string
+	}{
+		{
+			PermissionReadOnly,
+			[]string{"pull"},
+		},
+		{
+			PermissionReadWrite,
+			[]string{"pull", "push"},
+		},
+		{
+			PermissionReadWriteDelete,
+			[]string{"pull", "push", "delete"},
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(string(c.permission), func(t *testing.T) {
+			actual := c.permission.GetAllowedActions()
+			if !slices.Equal(actual, c.expected) {
+				t.Errorf("expected %+v, got %+v", c.expected, actual)
 			}
 		})
 	}

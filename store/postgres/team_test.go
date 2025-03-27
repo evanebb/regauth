@@ -52,6 +52,35 @@ func TestTeamStore_GetByID(t *testing.T) {
 	})
 }
 
+func TestTeamStore_GetByName(t *testing.T) {
+	db := getDatabaseConnection(t)
+	s := NewTeamStore(db)
+
+	t.Run("existing team", func(t *testing.T) {
+		teamID, _ := uuid.Parse("0195d46e-cfbf-7324-b9aa-4c9c78d3b722")
+
+		expectedTeam := user.Team{
+			ID:   teamID,
+			Name: "team-1",
+		}
+
+		team, err := s.GetByName(t.Context(), "team-1")
+		if err != nil {
+			t.Errorf("expected err to be nil, got %q", err)
+		}
+
+		if team != expectedTeam {
+			t.Errorf("expected %+v, got %+v", expectedTeam, team)
+		}
+	})
+
+	t.Run("team does not exist", func(t *testing.T) {
+		if _, err := s.GetByName(t.Context(), "foo"); !errors.Is(err, user.ErrTeamNotFound) {
+			t.Errorf("expected %q, got %q", user.ErrTeamNotFound, err)
+		}
+	})
+}
+
 func TestTeamStore_Create(t *testing.T) {
 	db := getDatabaseConnection(t)
 	s := NewTeamStore(db)
