@@ -14,13 +14,13 @@ type Authenticator interface {
 	Authenticate(ctx context.Context, username, password string, sourceIP net.IP) (token.PersonalAccessToken, user.User, error)
 }
 
-func NewAuthenticator(p token.Store, u user.Store) Authenticator {
-	return authenticator{patStore: p, userStore: u}
+func NewAuthenticator(t token.Store, u user.Store) Authenticator {
+	return authenticator{tokenStore: t, userStore: u}
 }
 
 type authenticator struct {
-	patStore  token.Store
-	userStore user.Store
+	tokenStore token.Store
+	userStore  user.Store
 }
 
 func (a authenticator) Authenticate(ctx context.Context, username, password string, sourceIP net.IP) (token.PersonalAccessToken, user.User, error) {
@@ -36,7 +36,7 @@ func (a authenticator) Authenticate(ctx context.Context, username, password stri
 		return p, u, errors.Join(ErrAuthenticationFailed, errors.New("invalid personal access token given"))
 	}
 
-	p, err = a.patStore.GetByPlainTextToken(ctx, password)
+	p, err = a.tokenStore.GetByPlainTextToken(ctx, password)
 	if err != nil {
 		if errors.Is(err, token.ErrNotFound) {
 			err = errors.Join(ErrAuthenticationFailed, err)
@@ -60,6 +60,6 @@ func (a authenticator) Authenticate(ctx context.Context, username, password stri
 		Timestamp: time.Now(),
 	}
 
-	err = a.patStore.AddUsageLogEntry(ctx, logEntry)
+	err = a.tokenStore.AddUsageLogEntry(ctx, logEntry)
 	return p, u, err
 }
