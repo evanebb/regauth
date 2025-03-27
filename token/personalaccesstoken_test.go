@@ -21,7 +21,6 @@ func TestPersonalAccessToken_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
-			t.Parallel()
 			err := c.token.IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -46,7 +45,6 @@ func TestDescription_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
-			t.Parallel()
 			err := Description(c.description).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -71,7 +69,6 @@ func TestPermission_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
-			t.Parallel()
 			err := Permission(c.permission).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
