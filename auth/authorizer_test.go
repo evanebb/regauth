@@ -137,6 +137,38 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 		}
 	})
 
+	t.Run("remove access from result if no actions requested", func(t *testing.T) {
+		repoStore := memory.NewRepositoryStore()
+		teamStore := memory.NewTeamStore()
+		a := NewAuthorizer(logger, repoStore, teamStore)
+
+		repo := repository.Repository{
+			ID:         uuid.New(),
+			Namespace:  "user",
+			Name:       "public-repo",
+			Visibility: repository.VisibilityPublic,
+		}
+		if err := repoStore.Create(t.Context(), repo); err != nil {
+			t.Fatalf("could not create repository: %q", err)
+		}
+
+		requestedAccess := Access{
+			{
+				Type: "repository",
+				Name: "user/public-repo",
+			},
+		}
+		grantedAccess, err := a.AuthorizeAccess(t.Context(), nil, nil, requestedAccess)
+		if err != nil {
+			t.Fatalf("expected err to be nil, got %q", err)
+		}
+
+		expectedAccess := Access{}
+		if !compareAccess(grantedAccess, expectedAccess) {
+			t.Fatalf("expected %+v, got %+v", expectedAccess, grantedAccess)
+		}
+	})
+
 	t.Run("full access granted for owned repositories", func(t *testing.T) {
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
