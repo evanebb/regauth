@@ -13,9 +13,12 @@ import (
 )
 
 func TestAuthenticator_Authenticate(t *testing.T) {
+	t.Parallel()
+
 	sourceIP := net.ParseIP("192.168.10.1")
 
 	t.Run("user does not exist", func(t *testing.T) {
+		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
 		a := NewAuthenticator(tokenStore, userStore)
@@ -27,6 +30,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 	})
 
 	t.Run("invalid personal access token", func(t *testing.T) {
+		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
 		a := NewAuthenticator(tokenStore, userStore)
@@ -47,6 +51,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 	})
 
 	t.Run("personal access token does not exist", func(t *testing.T) {
+		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
 		a := NewAuthenticator(tokenStore, userStore)
@@ -67,6 +72,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 	})
 
 	t.Run("personal access token belongs to different user", func(t *testing.T) {
+		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
 		a := NewAuthenticator(tokenStore, userStore)
@@ -98,6 +104,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 	})
 
 	t.Run("personal access token has expired", func(t *testing.T) {
+		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
 		a := NewAuthenticator(tokenStore, userStore)
@@ -129,6 +136,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 	})
 
 	t.Run("successful authentication", func(t *testing.T) {
+		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
 		a := NewAuthenticator(tokenStore, userStore)

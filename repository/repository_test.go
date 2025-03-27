@@ -8,6 +8,8 @@ import (
 )
 
 func TestRepository_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		repo Repository
@@ -20,6 +22,7 @@ func TestRepository_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := c.repo.IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -35,6 +38,8 @@ type nameTestCase struct {
 }
 
 func TestName_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []nameTestCase{
 		{"valid name", "valid", nil},
 		{"name too short", "a", InvalidNameError("name cannot be shorter than 2 characters")},
@@ -63,6 +68,7 @@ func TestName_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := Name(c.name).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -72,6 +78,8 @@ func TestName_IsValid(t *testing.T) {
 }
 
 func TestVisibility_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc       string
 		visibility string
@@ -84,6 +92,7 @@ func TestVisibility_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := Visibility(c.visibility).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)

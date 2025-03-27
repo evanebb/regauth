@@ -7,6 +7,8 @@ import (
 )
 
 func TestTeam_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		team Team
@@ -18,6 +20,7 @@ func TestTeam_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := c.team.IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -27,6 +30,8 @@ func TestTeam_IsValid(t *testing.T) {
 }
 
 func TestTeamName_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		name string
@@ -40,6 +45,7 @@ func TestTeamName_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := TeamName(c.name).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -49,6 +55,8 @@ func TestTeamName_IsValid(t *testing.T) {
 }
 
 func TestTeamMember_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc   string
 		member TeamMember
@@ -61,6 +69,7 @@ func TestTeamMember_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := c.member.IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -70,6 +79,8 @@ func TestTeamMember_IsValid(t *testing.T) {
 }
 
 func TestTeamMemberRole_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		role string
@@ -82,6 +93,7 @@ func TestTeamMemberRole_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := TeamMemberRole(c.role).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)

@@ -7,6 +7,8 @@ import (
 )
 
 func TestUser_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		user User
@@ -19,6 +21,7 @@ func TestUser_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := c.user.IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -28,6 +31,8 @@ func TestUser_IsValid(t *testing.T) {
 }
 
 func TestUsername_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc     string
 		username string
@@ -41,6 +46,7 @@ func TestUsername_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := Username(c.username).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)
@@ -50,6 +56,8 @@ func TestUsername_IsValid(t *testing.T) {
 }
 
 func TestRole_IsValid(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		desc string
 		role string
@@ -62,6 +70,7 @@ func TestRole_IsValid(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.desc, func(t *testing.T) {
+			t.Parallel()
 			err := Role(c.role).IsValid()
 			if !errors.Is(err, c.err) {
 				t.Errorf("expected %q, got %q", c.err, err)

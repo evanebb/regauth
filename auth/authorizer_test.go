@@ -14,10 +14,13 @@ import (
 )
 
 func TestAuthorizer_AuthorizeAccess(t *testing.T) {
+	t.Parallel()
+
 	// authorizer wants a logger, and since we don't care about the logs currently, so just discard them
 	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 
 	t.Run("no access requested", func(t *testing.T) {
+		t.Parallel()
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
 		a := NewAuthorizer(logger, repoStore, teamStore)
@@ -34,6 +37,7 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 	})
 
 	t.Run("no access granted for non-repository types", func(t *testing.T) {
+		t.Parallel()
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
 		a := NewAuthorizer(logger, repoStore, teamStore)
@@ -55,6 +59,7 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 	})
 
 	t.Run("no access granted for invalid repository names", func(t *testing.T) {
+		t.Parallel()
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
 		a := NewAuthorizer(logger, repoStore, teamStore)
@@ -77,6 +82,7 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 	})
 
 	t.Run("no access granted for unknown repositories", func(t *testing.T) {
+		t.Parallel()
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
 		a := NewAuthorizer(logger, repoStore, teamStore)
@@ -99,6 +105,7 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 	})
 
 	t.Run("grant pull access for public repositories", func(t *testing.T) {
+		t.Parallel()
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
 		a := NewAuthorizer(logger, repoStore, teamStore)
@@ -138,6 +145,7 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 	})
 
 	t.Run("remove access from result if no actions requested", func(t *testing.T) {
+		t.Parallel()
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
 		a := NewAuthorizer(logger, repoStore, teamStore)
@@ -170,6 +178,7 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 	})
 
 	t.Run("full access granted for owned repositories", func(t *testing.T) {
+		t.Parallel()
 		repoStore := memory.NewRepositoryStore()
 		teamStore := memory.NewTeamStore()
 		a := NewAuthorizer(logger, repoStore, teamStore)
@@ -263,6 +272,7 @@ func TestAuthorizer_AuthorizeAccess(t *testing.T) {
 
 	for _, c := range tokenTestCases {
 		t.Run("restrict permissions for "+c.desc+" token for owned repository", func(t *testing.T) {
+			t.Parallel()
 			repoStore := memory.NewRepositoryStore()
 			teamStore := memory.NewTeamStore()
 			a := NewAuthorizer(logger, repoStore, teamStore)
