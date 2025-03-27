@@ -64,7 +64,7 @@ func v1ApiRouter(
 
 	r.Route("/repositories", func(r chi.Router) {
 		r.Post("/", handlers.CreateRepository(logger, repoStore, teamStore))
-		r.Get("/", handlers.ListRepositories(logger, repoStore))
+		r.Get("/", handlers.ListRepositories(logger, repoStore, teamStore))
 
 		r.Route("/{namespace}/{name}", func(r chi.Router) {
 			r.Use(handlers.RepositoryParser(logger, repoStore, teamStore))

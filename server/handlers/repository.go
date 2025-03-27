@@ -160,7 +160,7 @@ func CreateRepository(l *slog.Logger, repoStore repository.Store, teamStore user
 	}
 }
 
-func ListRepositories(l *slog.Logger, s repository.Store) http.HandlerFunc {
+func ListRepositories(l *slog.Logger, repoStore repository.Store, teamStore user.TeamStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
 		if !ok {
@@ -169,7 +169,22 @@ func ListRepositories(l *slog.Logger, s repository.Store) http.HandlerFunc {
 			return
 		}
 
-		repos, err := s.GetAllByUser(r.Context(), u.ID)
+		// gather all the authorized namespaces for the user, and retrieve repositories in those namespaces
+		teams, err := teamStore.GetAllByUser(r.Context(), u.ID)
+		if err != nil {
+			l.ErrorContext(r.Context(), "failed to get teams for user", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		namespaces := make([]string, 0, len(teams)+1)
+
+		namespaces = append(namespaces, string(u.Username))
+		for _, team := range teams {
+			namespaces = append(namespaces, string(team.Name))
+		}
+
+		repos, err := repoStore.GetAllByNamespace(r.Context(), namespaces...)
 		if err != nil {
 			l.ErrorContext(r.Context(), "could not get repositories for user", slog.Any("error", err))
 			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")

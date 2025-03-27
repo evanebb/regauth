@@ -17,7 +17,7 @@ func NewRepositoryStore(db *pgxpool.Pool) RepositoryStore {
 	return RepositoryStore{TransactionStore{db: db}}
 }
 
-func (s RepositoryStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]repository.Repository, error) {
+func (s RepositoryStore) GetAllByNamespace(ctx context.Context, namespaces ...string) ([]repository.Repository, error) {
 	var repositories []repository.Repository
 
 	query := `
@@ -28,15 +28,9 @@ func (s RepositoryStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]
 			repositories.visibility
 		FROM repositories
 		JOIN namespaces ON repositories.namespace_id = namespaces.id
-		WHERE namespaces.user_id = $1
-		OR namespaces.team_id IN (
-			SELECT teams.id
-			FROM teams
-			JOIN team_members ON teams.id = team_members.team_id
-			WHERE team_members.user_id = $1
-		)
+		WHERE namespaces.name = ANY($1)
 		`
-	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
+	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, namespaces)
 	defer rows.Close()
 	if err != nil {
 		return repositories, err

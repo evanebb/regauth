@@ -7,13 +7,11 @@ import (
 	"testing"
 )
 
-func TestRepositoryStore_GetAllByUser(t *testing.T) {
+func TestRepositoryStore_GetAllByNamespace(t *testing.T) {
 	db := getDatabaseConnection(t)
 	s := NewRepositoryStore(db)
 
-	userID, _ := uuid.Parse("0195cd11-2863-71d4-a3c4-032bc264cf81")
-
-	repositories, err := s.GetAllByUser(t.Context(), userID)
+	repositories, err := s.GetAllByNamespace(t.Context(), "adminuser")
 	if err != nil {
 		t.Errorf("expected err to be nil, got %q", err)
 	}
