@@ -38,6 +38,24 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 		return err
 	}
 
+	start := time.Now()
+	timeout := 30 * time.Second
+	logger.InfoContext(ctx, fmt.Sprintf("waiting %s for database", timeout.String()))
+
+	for {
+		err := db.Ping(ctx)
+		if err == nil {
+			break
+		}
+
+		if time.Since(start) > timeout {
+			return fmt.Errorf("failed to connect to database: %w", err)
+		}
+		time.Sleep(time.Second)
+	}
+
+	logger.InfoContext(ctx, "database connection successful")
+
 	// this is a special migration to create the initial admin user from the configuration, so it isn't a plain-text
 	// SQL migration and requires the configuration
 	migrations.RegisterInitialAdminMigration(conf)
