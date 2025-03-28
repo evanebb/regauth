@@ -10,3 +10,6 @@ test:
 
 test-coverage:
 	go test -race -covermode=atomic -coverprofile=coverage.txt ./...
+
+docker:
+	docker build -t localhost/evanebb/regauth:latest .
