@@ -1,0 +1,38 @@
+services:
+  registry:
+    image: registry:3.0.0-rc.4
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./registry-config.yml:/etc/distribution/config.yml:ro
+      - ./cert.pem:/etc/distribution/cert.pem:ro
+    environment:
+      OTEL_TRACES_EXPORTER: none
+
+  regauth:
+    image: ghcr.io/evanebb/regauth:latest
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    read_only: true
+    volumes:
+      - ./regauth-config.yml:/etc/regauth/config.yml:ro
+      - ./cert.pem:/etc/regauth/cert.pem:ro
+      - ./key.pem:/etc/regauth/key.pem:ro
+    environment:
+      REGAUTH_INITIALADMIN_USERNAME: admin
+      REGAUTH_INITIALADMIN_PASSWORD: admin
+      REGAUTH_DATABASE_PASSWORD: verysecurepassword
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: regauth
+      POSTGRES_DB: regauth
+      POSTGRES_PASSWORD: verysecurepassword
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data: { }

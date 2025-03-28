@@ -1,0 +1,11 @@
+database:
+  host: postgres
+  name: regauth
+  user: regauth
+
+token:
+  issuer: regauth
+  service: registry
+  certificate: /etc/regauth/cert.pem
+  key: /etc/regauth/key.pem
+  alg: RS256
