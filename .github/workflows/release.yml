@@ -22,11 +22,10 @@ jobs:
           go-version: '1.24'
 
       - name: Build
-        run: go build -tags viper_bind_struct -o ./bin/regauth-$GOOS-$GOARCH ./cmd/regauth
+        run: make build
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
 
       - name: Upload binaries to release
         env:
@@ -34,4 +33,4 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run:
-          gh release upload ${{ github.event.release.tag_name }} bin/regauth-$GOOS-$GOARCH
+          gh release upload ${{ github.event.release.tag_name }} bin/regauth-$GOOS-$GOARCH bin/regauth-cli-$GOOS-$GOARCH

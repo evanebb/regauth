@@ -1,6 +1,9 @@
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
+
 build:
-	CGO_ENABLED=0 go build -tags viper_bind_struct -o ./bin/regauth ./cmd/regauth
-	CGO_ENABLED=0 go build -o ./bin/regauth-cli ./cmd/regauth-cli
+	CGO_ENABLED=0 go build -tags viper_bind_struct -o ./bin/regauth-$(GOOS)-$(GOARCH) ./cmd/regauth
+	CGO_ENABLED=0 go build -o ./bin/regauth-cli-$(GOOS)-$(GOARCH) ./cmd/regauth-cli
 
 test:
 	go test -race ./...
