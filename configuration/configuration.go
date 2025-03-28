@@ -12,7 +12,6 @@ type Configuration struct {
 	Database     Database
 	Token        Token
 	Auth         Auth
-	Registry     Registry
 }
 
 // SetDefaults sets the defaults for the configuration on a viper.Viper instance.
@@ -29,7 +28,6 @@ func (c Configuration) IsValid() error {
 
 	c.Database.isValid(errs)
 	c.Token.isValid(errs)
-	c.Registry.isValid(errs)
 
 	if errs.HasErrors() {
 		return errs
@@ -116,14 +114,4 @@ type Auth struct {
 
 type LocalAuth struct {
 	enabled bool
-}
-
-type Registry struct {
-	Host string
-}
-
-func (c Registry) isValid(errs *errorCollection) {
-	if c.Host == "" {
-		errs.Add(errors.New("missing registry.host"))
-	}
 }

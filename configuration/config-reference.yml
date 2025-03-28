@@ -13,8 +13,8 @@ log:
 
 # HTTP server configuration
 http:
-  # The address to listen on in 'host:port' format. Defaults to ':80'.
-  addr: ":80"
+  # The address to listen on in 'host:port' format. Defaults to ':8000'.
+  addr: ":8000"
   # Path to the TLS certificate/key file to use for HTTPS. If not specified, the server will listen use HTTP.
   certificate: /path/to/cert.pem
   key: /path/to/key.pem
@@ -41,7 +41,3 @@ token:
 auth:
   local:
     enabled: true
-
-# Docker registry details. Currently only used for display purposes in the front-end.
-registry:
-  host: localhost:5000
