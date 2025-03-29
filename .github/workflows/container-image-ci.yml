@@ -52,3 +52,10 @@ jobs:
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Push Helm chart to GitHub Container Registry
+        if: contains(github.ref, 'tags')
+        run: |
+          VERSION=$(yq -r .version ./charts/regauth/Chart.yaml)
+          helm package --version $VERSION charts/regauth
+          helm push regauth-$VERSION.tgz oci://ghcr.io/evanebb/charts
