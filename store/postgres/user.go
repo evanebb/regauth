@@ -22,28 +22,20 @@ func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 
 	query := "SELECT id, username, role FROM users"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query)
-	defer rows.Close()
 	if err != nil {
 		return users, err
 	}
 
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (user.User, error) {
 		var u user.User
 
 		err = rows.Scan(&u.ID, &u.Username, &u.Role)
 		if err != nil {
-			return users, err
+			return u, err
 		}
 
-		err = u.IsValid()
-		if err != nil {
-			return users, err
-		}
-
-		users = append(users, u)
-	}
-
-	return users, nil
+		return u, u.IsValid()
+	})
 }
 
 func (s UserStore) GetByID(ctx context.Context, id uuid.UUID) (user.User, error) {

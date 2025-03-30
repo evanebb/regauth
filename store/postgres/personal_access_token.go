@@ -23,31 +23,23 @@ func (s PersonalAccessTokenStore) GetAllByUser(ctx context.Context, userID uuid.
 
 	query := "SELECT id, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE user_id = $1"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
-	defer rows.Close()
 	if err != nil {
 		return tokens, err
 	}
 
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (token.PersonalAccessToken, error) {
 		var t token.PersonalAccessToken
 		var pt string
 
 		err = rows.Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
 		if err != nil {
-			return tokens, err
+			return t, err
 		}
 
 		t.Permission = permissionFromDatabaseMap[pt]
 
-		err = t.IsValid()
-		if err != nil {
-			return tokens, err
-		}
-
-		tokens = append(tokens, t)
-	}
-
-	return tokens, nil
+		return t, t.IsValid()
+	})
 }
 
 func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (token.PersonalAccessToken, error) {
@@ -78,11 +70,11 @@ func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plain
 	lastEight := plainTextToken[len(plainTextToken)-8:]
 	query := "SELECT id, hash, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE last_eight = $1"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, lastEight)
-	defer rows.Close()
 	if err != nil {
 		return token.PersonalAccessToken{}, err
 	}
 
+	defer rows.Close()
 	for rows.Next() {
 		var t token.PersonalAccessToken
 		var pt string
@@ -136,23 +128,11 @@ func (s PersonalAccessTokenStore) GetUsageLog(ctx context.Context, tokenID uuid.
 
 	query := "SELECT token_id, source_ip, timestamp FROM personal_access_tokens_usage_log WHERE token_id = $1 ORDER BY timestamp DESC"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, tokenID)
-	defer rows.Close()
 	if err != nil {
 		return log, err
 	}
 
-	for rows.Next() {
-		var l token.UsageLogEntry
-
-		err = rows.Scan(&l.TokenID, &l.SourceIP, &l.Timestamp)
-		if err != nil {
-			return log, err
-		}
-
-		log = append(log, l)
-	}
-
-	return log, nil
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[token.UsageLogEntry])
 }
 
 func (s PersonalAccessTokenStore) AddUsageLogEntry(ctx context.Context, e token.UsageLogEntry) error {

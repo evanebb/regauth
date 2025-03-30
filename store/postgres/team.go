@@ -30,22 +30,19 @@ func (s TeamStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]user.T
 		WHERE users.id = $1
 		`
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
-	defer rows.Close()
 	if err != nil {
 		return teams, err
 	}
 
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (user.Team, error) {
 		var t user.Team
 
 		if err := rows.Scan(&t.ID, &t.Name); err != nil {
-			return teams, err
+			return t, err
 		}
 
-		teams = append(teams, t)
-	}
-
-	return teams, nil
+		return t, t.IsValid()
+	})
 }
 
 func (s TeamStore) GetByID(ctx context.Context, id uuid.UUID) (user.Team, error) {
@@ -157,22 +154,19 @@ func (s TeamStore) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]user
 		WHERE teams.id = $1
 		`
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, teamID)
-	defer rows.Close()
 	if err != nil {
 		return members, err
 	}
 
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (user.TeamMember, error) {
 		var tm user.TeamMember
 
 		if err := rows.Scan(&tm.UserID, &tm.TeamID, &tm.Username, &tm.Role); err != nil {
-			return members, err
+			return tm, err
 		}
 
-		members = append(members, tm)
-	}
-
-	return members, nil
+		return tm, tm.IsValid()
+	})
 }
 
 func (s TeamStore) AddTeamMember(ctx context.Context, m user.TeamMember) error {

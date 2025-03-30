@@ -31,28 +31,20 @@ func (s RepositoryStore) GetAllByNamespace(ctx context.Context, namespaces ...st
 		WHERE namespaces.name = ANY($1)
 		`
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, namespaces)
-	defer rows.Close()
 	if err != nil {
 		return repositories, err
 	}
 
-	for rows.Next() {
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (repository.Repository, error) {
 		var r repository.Repository
 
 		err = rows.Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
 		if err != nil {
-			return repositories, err
+			return r, err
 		}
 
-		err = r.IsValid()
-		if err != nil {
-			return repositories, err
-		}
-
-		repositories = append(repositories, r)
-	}
-
-	return repositories, nil
+		return r, r.IsValid()
+	})
 }
 
 func (s RepositoryStore) GetByNamespaceAndName(ctx context.Context, namespace string, name string) (repository.Repository, error) {
