@@ -37,6 +37,12 @@ func GenerateRegistryToken(
 		username, password, ok := r.BasicAuth()
 		if ok {
 			sourceIPRaw, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				l.ErrorContext(r.Context(), "failed to parse source IP address", slog.Any("error", err))
+				writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
+				return
+			}
+
 			sourceIP := net.ParseIP(sourceIPRaw)
 
 			lp, lu, err := authenticator.Authenticate(r.Context(), username, password, sourceIP)

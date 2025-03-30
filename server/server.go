@@ -33,10 +33,10 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 
 	connString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", conf.Database.User, conf.Database.Password, conf.Database.Host, conf.Database.Port, conf.Database.Name)
 	db, err := pgxpool.New(ctx, connString)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	start := time.Now()
 	timeout := 30 * time.Second
@@ -66,7 +66,11 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	}
 
 	stdlibDb := stdlib.OpenDBFromPool(db)
-	defer stdlibDb.Close()
+	defer func() {
+		if err := stdlibDb.Close(); err != nil {
+			logger.ErrorContext(ctx, "failed to close database connection", slog.Any("error", err))
+		}
+	}()
 	err = goose.Up(stdlibDb, "migrations")
 	if err != nil {
 		return err
@@ -178,7 +182,12 @@ func loadCertificate(path string) (*x509.Certificate, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open certificate file %q: %w", path, err)
 	}
-	defer certFile.Close()
+	defer func() {
+		tempErr := certFile.Close()
+		if err == nil && tempErr != nil {
+			err = tempErr
+		}
+	}()
 
 	data, err := io.ReadAll(certFile)
 	if err != nil {
@@ -203,7 +212,12 @@ func loadPrivateKey(path string) (crypto.PrivateKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open private key file %q: %w", path, err)
 	}
-	defer keyFile.Close()
+	defer func() {
+		tempErr := keyFile.Close()
+		if err == nil && tempErr != nil {
+			err = tempErr
+		}
+	}()
 
 	data, err := io.ReadAll(keyFile)
 	if err != nil {

@@ -58,7 +58,7 @@ func v1ApiRouter(
 
 	r.NotFound(handlers.NotFound)
 
-	excludedRoutes := middleware.ExcludedRoutes{{"/v1/tokens", "POST"}}
+	excludedRoutes := middleware.ExcludedRoutes{{Path: "/v1/tokens", Method: "POST"}}
 	authMiddleware := middleware.TokenAuthentication(logger, tokenStore, userStore, excludedRoutes)
 	r.Use(authMiddleware)
 
