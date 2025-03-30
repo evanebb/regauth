@@ -11,7 +11,6 @@ type Configuration struct {
 	HTTP         HTTP
 	Database     Database
 	Token        Token
-	Auth         Auth
 }
 
 // SetDefaults sets the defaults for the configuration on a viper.Viper instance.
@@ -20,7 +19,6 @@ func SetDefaults(v *viper.Viper) {
 	v.SetDefault("log.formatter", "text")
 	v.SetDefault("http.addr", ":8000")
 	v.SetDefault("database.port", 5432)
-	v.SetDefault("auth.local.enabled", true)
 }
 
 func (c Configuration) IsValid() error {
@@ -106,12 +104,4 @@ func (c Token) isValid(errs *errorCollection) {
 	if c.Alg == "" {
 		errs.Add(errors.New("missing token.alg"))
 	}
-}
-
-type Auth struct {
-	Local LocalAuth
-}
-
-type LocalAuth struct {
-	enabled bool
 }

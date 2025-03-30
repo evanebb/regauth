@@ -35,9 +35,3 @@ token:
   certificate: /path/to/certificate.pem
   key: /path/to/key.pem
   alg: RS256
-
-# Authentication configuration for accessing the application itself.
-# This is currently unused, but will be used once multiple different authentication back-ends are added.
-auth:
-  local:
-    enabled: true
