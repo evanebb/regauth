@@ -11,4 +11,6 @@ WORKDIR /etc/regauth
 COPY configuration/config-docker.yml ./config.yml
 COPY --from=build /app/bin/regauth /regauth
 
+USER 65532:65532
+
 CMD ["/regauth", "serve", "/etc/regauth/config.yml"]
