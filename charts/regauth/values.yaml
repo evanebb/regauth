@@ -31,13 +31,13 @@ database:
   secretPasswordKey: "password"
 
 token:
-  # Issuer set in the tokens generated for the registry. Must match the registry configuration.
+  # -- Issuer set in the tokens generated for the registry. Must match the registry configuration.
   issuer: regauth
-  # Audience/service set in the tokens generated for the registry. Must match the registry configuration.
+  # -- Audience/service set in the tokens generated for the registry. Must match the registry configuration.
   service: registry
-  # Signing algorithm to use when signing tokens. All asymmetric JWT signing algorithms are supported. This must match the configured private key.
+  # -- Signing algorithm to use when signing tokens. All asymmetric JWT signing algorithms are supported. This must match the configured private key.
   alg: ""
-  # Name of the secret containing the signing key/certificate.
+  # -- Name of the secret containing the signing key/certificate.
   secretName: ""
   # -- Filename/key of the certificate within the secret.
   certFilename: ""
