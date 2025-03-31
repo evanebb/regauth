@@ -28,7 +28,7 @@ func NewRootCmd() (*cobra.Command, error) {
 		return nil, err
 	}
 
-	credentials, err := credentialStore.Get()
+	host, credentials, err := credentialStore.GetCurrent()
 	if err != nil {
 		return nil, err
 	}
@@ -39,11 +39,12 @@ func NewRootCmd() (*cobra.Command, error) {
 		Password: credentials.Password,
 	}
 
-	client, err := oas.NewClient(credentials.Host, securitySource)
+	client, err := oas.NewClient(host, securitySource)
 	if err != nil {
 		return nil, err
 	}
 
+	cmd.AddCommand(newConfigCmd(credentialStore))
 	cmd.AddCommand(newLoginCmd(credentialStore))
 	cmd.AddCommand(newLogoutCmd(credentialStore))
 	cmd.AddCommand(newRepositoryCmd(client))

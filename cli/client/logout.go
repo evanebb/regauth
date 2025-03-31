@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 )
@@ -9,7 +10,11 @@ func newLogoutCmd(credentialStore CredentialStore) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "logout",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := credentialStore.Save(Credentials{}); err != nil {
+			if len(args) != 1 {
+				return errors.New("specify the host to log out from")
+			}
+
+			if err := credentialStore.Delete(args[0]); err != nil {
 				return err
 			}
 

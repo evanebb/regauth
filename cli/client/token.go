@@ -142,7 +142,7 @@ func newCreateTokenCommand(client *oas.Client, credentialStore CredentialStore) 
 }
 
 func logInUsingToken(credentialStore CredentialStore, token string) error {
-	credentials, err := credentialStore.Get()
+	host, credentials, err := credentialStore.GetCurrent()
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func logInUsingToken(credentialStore CredentialStore, token string) error {
 	credentials.Token = token
 	credentials.Username, credentials.Password = "", ""
 
-	if err := credentialStore.Save(credentials); err != nil {
+	if err := credentialStore.Save(host, credentials); err != nil {
 		return err
 	}
 

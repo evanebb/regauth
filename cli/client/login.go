@@ -27,7 +27,7 @@ func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
 			}
 
 			host := args[0]
-			credentials := Credentials{Host: host}
+			credentials := HostCredentials{}
 
 			if tokenStdin || passwordStdin {
 				b, err := io.ReadAll(os.Stdin)
@@ -52,7 +52,7 @@ func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
 				return errors.New("no credentials given")
 			}
 
-			if err := credentialStore.Save(credentials); err != nil {
+			if err := credentialStore.Save(host, credentials); err != nil {
 				return err
 			}
 
