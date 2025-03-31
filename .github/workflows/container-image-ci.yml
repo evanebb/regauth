@@ -118,7 +118,8 @@ jobs:
 
   helm:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' }}
+    # only push Helm chart on release
+    if: contains(github.ref, 'tags')
     needs:
       - build
     permissions:
