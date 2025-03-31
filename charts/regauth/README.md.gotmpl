@@ -1,0 +1,24 @@
+{{ template "chart.header" . }}
+{{ template "chart.description" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+## Installing
+
+To install the latest version of the chart with release name `my-release`:
+```shell
+helm install my-release oci://ghcr.io/evanebb/charts/{{ template "chart.name" . }}
+```
+
+Note that this will not install and configure the database or container registry.
+You must install those yourself, and configure this application to use them using the [chart values](#Values).
+
+There are a few excellent options to run a PostgreSQL database within Kubernetes, to name a few:
+- [Bitnami PostgreSQL chart](https://artifacthub.io/packages/helm/bitnami/postgresql)
+- [CloudNativePG](https://cloudnative-pg.io/)
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "helm-docs.versionFooter" . }}

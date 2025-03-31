@@ -3,28 +3,45 @@
 # Declare variables to be passed into your templates.
 
 initialadmin:
+  # -- Name of the secret containing the credentials for the initial admin user. This will only be used on first application start-up, and can be removed afterward.
   secretName: ""
+  # -- Key of the username value within the secret.
   secretUsernameKey: "username"
+  # -- Key of the password value within the secret.
   secretPasswordKey: "password"
 
 log:
+  # -- Log level, can be 'debug', 'info', 'warn' or 'error'
   level: info
+  # -- Format of the log entries, can be either 'text' or 'json'.
   formatter: text
 
 database:
+  # -- PostgreSQL database host.
   host: ""
+  # -- Database name.
   name: regauth
+  # -- Database port.
   port: 5432
+  # -- Name of the secret containing the database credentials.
   secretName: ""
+  # -- Key of the username value within the secret.
   secretUsernameKey: "username"
+  # -- Key of the password value within the secret.
   secretPasswordKey: "password"
 
 token:
+  # Issuer set in the tokens generated for the registry. Must match the registry configuration.
   issuer: regauth
+  # Audience/service set in the tokens generated for the registry. Must match the registry configuration.
   service: registry
-  alg: RS256
+  # Signing algorithm to use when signing tokens. All asymmetric JWT signing algorithms are supported. This must match the configured private key.
+  alg: ""
+  # Name of the secret containing the signing key/certificate.
   secretName: ""
+  # -- Filename/key of the certificate within the secret.
   certFilename: ""
+  # -- Filename/key of the certificate private key within the secret.
   certKeyFilename: ""
 
 replicaCount: 1
