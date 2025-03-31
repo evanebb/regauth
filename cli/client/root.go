@@ -33,11 +33,9 @@ func NewRootCmd() (*cobra.Command, error) {
 		return nil, err
 	}
 
-	securitySource := SecuritySource{
-		Token:    credentials.Token,
-		Username: credentials.Username,
-		Password: credentials.Password,
-	}
+	// very fun that this direct conversion works, not guaranteed to keep working since these types aren't really meant
+	// to be intertwined
+	securitySource := SecuritySource(credentials)
 
 	client, err := oas.NewClient(host, securitySource)
 	if err != nil {
