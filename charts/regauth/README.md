@@ -76,12 +76,12 @@ There are a few excellent options to run a PostgreSQL database within Kubernetes
 | serviceAccount.automount | bool | `true` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `""` |  |
-| token.alg | string | `""` |  |
+| token.alg | string | `""` | Signing algorithm to use when signing tokens. All asymmetric JWT signing algorithms are supported. This must match the configured private key. |
 | token.certFilename | string | `""` | Filename/key of the certificate within the secret. |
 | token.certKeyFilename | string | `""` | Filename/key of the certificate private key within the secret. |
-| token.issuer | string | `"regauth"` |  |
-| token.secretName | string | `""` |  |
-| token.service | string | `"registry"` |  |
+| token.issuer | string | `"regauth"` | Issuer set in the tokens generated for the registry. Must match the registry configuration. |
+| token.secretName | string | `""` | Name of the secret containing the signing key/certificate. |
+| token.service | string | `"registry"` | Audience/service set in the tokens generated for the registry. Must match the registry configuration. |
 | tolerations | list | `[]` |  |
 | volumeMounts | list | `[]` |  |
 | volumes | list | `[]` |  |
