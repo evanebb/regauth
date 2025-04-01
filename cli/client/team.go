@@ -12,7 +12,9 @@ import (
 
 func newTeamCmd(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "team",
+		Use:   "team",
+		Short: "Manage teams",
+		Long:  "Manage teams.\nTeams allow users to collaborate on and access repositories under a shared namespace.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -30,7 +32,9 @@ func newTeamCmd(client *oas.Client) *cobra.Command {
 
 func newListTeamsCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "list",
+		Use:   "list",
+		Short: "List all your teams",
+		Long:  "List all teams that you are a member of.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -56,7 +60,9 @@ func newListTeamsCommand(client *oas.Client) *cobra.Command {
 
 func newGetTeamCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get <team>",
+		Use:   "get <team>",
+		Short: "Get information about a specific team",
+		Long:  "Get information about a specific team.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -88,7 +94,9 @@ func newCreateTeamCommand(client *oas.Client) *cobra.Command {
 	var name string
 
 	cmd := &cobra.Command{
-		Use: "create",
+		Use:   "create",
+		Short: "Create a new team",
+		Long:  "Create a new team. You will automatically be added as a team member and granted administrator privileges.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			team, err := client.CreateTeam(context.Background(), &oas.TeamRequest{
 				Name: name,
@@ -111,7 +119,9 @@ func newCreateTeamCommand(client *oas.Client) *cobra.Command {
 
 func newDeleteTeamCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "delete <team>",
+		Use:   "delete <team>",
+		Short: "Delete a team",
+		Long:  "Delete a team.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -137,7 +147,9 @@ func newDeleteTeamCommand(client *oas.Client) *cobra.Command {
 
 func newTeamMemberCmd(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "member",
+		Use:   "member",
+		Short: "Manage team members for a team",
+		Long:  "Manage team members for a team.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -152,7 +164,9 @@ func newTeamMemberCmd(client *oas.Client) *cobra.Command {
 
 func newListTeamMembersCmd(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "list",
+		Use:   "list <team>",
+		Short: "List all team members for a team",
+		Long:  "List all team members for a team.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -189,7 +203,9 @@ func newAddTeamMemberCmd(client *oas.Client) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use: "add",
+		Use:   "add <team>",
+		Short: "Add a new member to a team",
+		Long:  "Add a new member to a team.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -226,7 +242,9 @@ func newAddTeamMemberCmd(client *oas.Client) *cobra.Command {
 
 func newRemoveTeamMemberCmd(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "remove",
+		Use:   "remove <team>",
+		Short: "Remove a member from a team",
+		Long:  "Remove a member from a team.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 

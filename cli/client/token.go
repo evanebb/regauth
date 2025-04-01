@@ -15,7 +15,9 @@ import (
 
 func newTokenCmd(client *oas.Client, credentialStore CredentialStore) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "token",
+		Use:   "token",
+		Short: "Manage personal access tokens",
+		Long:  "Manage personal access tokens.\nPersonal access tokens allow you to authenticate to the regauth API as well as the container registry itself.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -31,7 +33,9 @@ func newTokenCmd(client *oas.Client, credentialStore CredentialStore) *cobra.Com
 
 func newListTokensCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "list",
+		Use:   "list",
+		Short: "List all your personal access tokens",
+		Long:  "List all your personal access tokens.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -57,7 +61,9 @@ func newListTokensCommand(client *oas.Client) *cobra.Command {
 
 func newGetTokenCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get <token>",
+		Use:   "get <token>",
+		Short: "Get information about a specific personal access token",
+		Long:  "Get information about a specific personal access token.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -99,7 +105,9 @@ func newCreateTokenCommand(client *oas.Client, credentialStore CredentialStore) 
 	)
 
 	cmd := &cobra.Command{
-		Use: "create",
+		Use:   "create",
+		Short: "Create a new personal access token",
+		Long:  "Create a new personal access token.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			expirationDate, err := time.Parse(time.RFC3339, expirationDateStr)
 			if err != nil {
@@ -159,7 +167,9 @@ func logInUsingToken(credentialStore CredentialStore, token string) error {
 
 func newDeleteTokenCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "delete <token>",
+		Use:   "delete <token>",
+		Short: "Delete a personal access token",
+		Long:  "Delete a personal access token.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 

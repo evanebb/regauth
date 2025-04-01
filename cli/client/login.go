@@ -18,9 +18,9 @@ func newLoginCmd(credentialStore CredentialStore) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "login",
-		Short: "login",
-		Long:  "login",
+		Use:   "login <host>",
+		Short: "Log in to a regauth host",
+		Long:  "Log in to a regauth host using the specified credentials.\nYou can either use a username and password or a personal access token.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("specify a host to log in to")

@@ -13,7 +13,9 @@ import (
 
 func newRepositoryCmd(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "repository",
+		Use:   "repository",
+		Short: "Manage container registry repositories",
+		Long:  "Manage container registry repositories.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -29,7 +31,9 @@ func newRepositoryCmd(client *oas.Client) *cobra.Command {
 
 func newListRepositoriesCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "list",
+		Use:   "list",
+		Short: "List all your repositories",
+		Long:  "List all your repositories.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -55,7 +59,9 @@ func newListRepositoriesCommand(client *oas.Client) *cobra.Command {
 
 func newGetRepositoryCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get <namespace/name>",
+		Use:   "get <namespace>/<name>",
+		Short: "Get information about a specific repository",
+		Long:  "Get information about specific repository.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -97,7 +103,9 @@ func newCreateRepositoryCommand(client *oas.Client) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use: "create",
+		Use:   "create",
+		Short: "Create a new repository",
+		Long:  "Create a new repository.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			repo, err := client.CreateRepository(context.Background(), &oas.RepositoryRequest{
 				Namespace:  namespace,
@@ -126,7 +134,9 @@ func newCreateRepositoryCommand(client *oas.Client) *cobra.Command {
 
 func newDeleteRepositoryCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "delete <namespace/name>",
+		Use:   "delete <namespace>/<name>",
+		Short: "Delete a repository",
+		Long:  "Delete a repository.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 

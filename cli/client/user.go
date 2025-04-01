@@ -12,7 +12,9 @@ import (
 
 func newUserCmd(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "user",
+		Use:   "user",
+		Short: "Manage users",
+		Long:  "Manage users. Administrator privileges are required for user management.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -29,7 +31,9 @@ func newUserCmd(client *oas.Client) *cobra.Command {
 
 func newListUsersCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "list",
+		Use:   "list",
+		Short: "List all users",
+		Long:  "List all users.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -55,7 +59,9 @@ func newListUsersCommand(client *oas.Client) *cobra.Command {
 
 func newGetUserCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get <namespace/name>",
+		Use:   "get <username>",
+		Short: "Get information about a specific user",
+		Long:  "Get information about specific user.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -90,7 +96,9 @@ func newCreateUserCommand(client *oas.Client) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use: "create",
+		Use:   "create",
+		Short: "Create a new user",
+		Long:  "Create a new user.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			user, err := client.CreateUser(context.Background(), &oas.UserRequest{
 				Username: username,
@@ -116,7 +124,9 @@ func newCreateUserCommand(client *oas.Client) *cobra.Command {
 
 func newDeleteUserCommand(client *oas.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "delete <namespace/name>",
+		Use:   "delete <username>",
+		Short: "Delete a user",
+		Long:  "Delete a user.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -144,7 +154,9 @@ func newChangeUserPasswordCommand(client *oas.Client) *cobra.Command {
 	var password string
 
 	cmd := &cobra.Command{
-		Use: "change-password",
+		Use:   "change-password",
+		Short: "Change the password for a user",
+		Long:  "Change the password for a user.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 

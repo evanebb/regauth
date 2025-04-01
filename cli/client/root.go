@@ -10,8 +10,8 @@ import (
 func NewRootCmd() (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:   "regauth-cli",
-		Short: "`regauth-cli`",
-		Long:  "`regauth-cli`",
+		Short: "regauth-cli is a command-line tool to interact with regauth",
+		Long:  "A command-line tool to interact with a regauth instance and manage repositories, personal access tokens, and more.\nMore information can be found at https://github.com/evanebb/regauth.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},

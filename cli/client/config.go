@@ -10,7 +10,9 @@ import (
 
 func newConfigCmd(credentialStore CredentialStore) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "config",
+		Use:   "config",
+		Short: "Manage and inspect configuration for logged-in regauth hosts",
+		Long:  "Manage and inspect configuration for logged-in regauth hosts.\nThis allows you to easily switch between multiple different regauth hosts.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -25,7 +27,9 @@ func newConfigCmd(credentialStore CredentialStore) *cobra.Command {
 
 func newUseHostCmd(credentialStore CredentialStore) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "use-host",
+		Use:   "use-host",
+		Short: "Set the current regauth host to manage",
+		Long:  "Set the current regauth host to manage.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("specify the host to use")
@@ -45,7 +49,9 @@ func newUseHostCmd(credentialStore CredentialStore) *cobra.Command {
 
 func newGetHostCmd(credentialStore CredentialStore) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get-host",
+		Use:   "get-host",
+		Short: "Gets the current regauth host",
+		Long:  "Gets the current regauth host.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			host, _, err := credentialStore.GetCurrent()
 			if err != nil {
@@ -62,7 +68,9 @@ func newGetHostCmd(credentialStore CredentialStore) *cobra.Command {
 
 func newGetHostsCmd(credentialStore CredentialStore) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "get-hosts",
+		Use:   "get-hosts",
+		Short: "Gets all known regauth hosts",
+		Long:  "Gets all known regauth hosts.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			credentials, err := credentialStore.GetAll()
 			if err != nil {
