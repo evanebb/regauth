@@ -65,18 +65,14 @@ func newGetRepositoryCommand(client *oas.Client) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
-			if len(args) != 1 {
-				return errors.New("specify a repository name")
-			}
-
-			split := strings.Split(args[0], "/")
-			if len(split) != 2 {
-				return errors.New("invalid repository name given")
+			namespace, name, err := parseRepositoryNameFromArgs(args)
+			if err != nil {
+				return err
 			}
 
 			repo, err := client.GetRepository(ctx, oas.GetRepositoryParams{
-				Namespace: split[0],
-				Name:      split[1],
+				Namespace: namespace,
+				Name:      name,
 			})
 			if err != nil {
 				fmt.Println(err)
@@ -140,18 +136,14 @@ func newDeleteRepositoryCommand(client *oas.Client) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
-			if len(args) != 1 {
-				return errors.New("specify a repository name")
+			namespace, name, err := parseRepositoryNameFromArgs(args)
+			if err != nil {
+				return err
 			}
 
-			split := strings.Split(args[0], "/")
-			if len(split) != 2 {
-				return errors.New("invalid repository name given")
-			}
-
-			err := client.DeleteRepository(ctx, oas.DeleteRepositoryParams{
-				Namespace: split[0],
-				Name:      split[1],
+			err = client.DeleteRepository(ctx, oas.DeleteRepositoryParams{
+				Namespace: namespace,
+				Name:      name,
 			})
 			if err != nil {
 				fmt.Println(err)
@@ -164,4 +156,24 @@ func newDeleteRepositoryCommand(client *oas.Client) *cobra.Command {
 	}
 
 	return cmd
+}
+
+func parseRepositoryNameFromArgs(args []string) (namespace string, name string, err error) {
+	argCount := len(args)
+
+	if argCount == 1 {
+		// assume repository name is given as <namespace>/<name>
+		split := strings.Split(args[0], "/")
+		if len(split) != 2 {
+			return "", "", errors.New("invalid repository name given")
+		}
+		return split[0], split[1], nil
+	}
+
+	if argCount == 2 {
+		// assume repository name is given as <namespace> <name>
+		return args[0], args[1], nil
+	}
+
+	return "", "", errors.New("specify a repository name")
 }
