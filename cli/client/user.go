@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/evanebb/regauth/oas"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"text/tabwriter"
 )
@@ -151,7 +152,10 @@ func newDeleteUserCommand(client *oas.Client) *cobra.Command {
 }
 
 func newChangeUserPasswordCommand(client *oas.Client) *cobra.Command {
-	var password string
+	var (
+		password      string
+		passwordStdin bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   "change-password",
@@ -162,6 +166,19 @@ func newChangeUserPasswordCommand(client *oas.Client) *cobra.Command {
 
 			if len(args) != 1 {
 				return errors.New("specify a username")
+			}
+
+			if passwordStdin {
+				b, err := io.ReadAll(os.Stdin)
+				if err != nil {
+					return err
+				}
+
+				password = string(b)
+			}
+
+			if password == "" {
+				return errors.New("no new password given")
 			}
 
 			err := client.ChangeUserPassword(ctx,
@@ -183,7 +200,7 @@ func newChangeUserPasswordCommand(client *oas.Client) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&password, "password", "", "new password for the user")
-	_ = cmd.MarkFlagRequired("password")
+	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false, "read new password from stdin")
 
 	return cmd
 }
