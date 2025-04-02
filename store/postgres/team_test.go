@@ -5,7 +5,16 @@ import (
 	"github.com/evanebb/regauth/user"
 	"github.com/google/uuid"
 	"testing"
+	"time"
 )
+
+// compareTeams will check two user.Team objects for equality.
+// Mostly exists for proper timestamp comparison.
+func compareTeams(t1 user.Team, t2 user.Team) bool {
+	return t1.ID == t2.ID &&
+		t1.Name == t2.Name &&
+		t1.CreatedAt.Equal(t2.CreatedAt)
+}
 
 func TestTeamStore_GetAllByUser(t *testing.T) {
 	db := getDatabaseConnection(t)
@@ -29,10 +38,12 @@ func TestTeamStore_GetByID(t *testing.T) {
 
 	t.Run("existing team", func(t *testing.T) {
 		teamID, _ := uuid.Parse("0195d46e-cfbf-7324-b9aa-4c9c78d3b722")
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 
 		expectedTeam := user.Team{
-			ID:   teamID,
-			Name: "team-1",
+			ID:        teamID,
+			Name:      "team-1",
+			CreatedAt: createdAt,
 		}
 
 		team, err := s.GetByID(t.Context(), teamID)
@@ -40,7 +51,7 @@ func TestTeamStore_GetByID(t *testing.T) {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if team != expectedTeam {
+		if !compareTeams(expectedTeam, team) {
 			t.Errorf("expected %+v, got %+v", expectedTeam, team)
 		}
 	})
@@ -58,10 +69,12 @@ func TestTeamStore_GetByName(t *testing.T) {
 
 	t.Run("existing team", func(t *testing.T) {
 		teamID, _ := uuid.Parse("0195d46e-cfbf-7324-b9aa-4c9c78d3b722")
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 
 		expectedTeam := user.Team{
-			ID:   teamID,
-			Name: "team-1",
+			ID:        teamID,
+			Name:      "team-1",
+			CreatedAt: createdAt,
 		}
 
 		team, err := s.GetByName(t.Context(), "team-1")
@@ -69,7 +82,7 @@ func TestTeamStore_GetByName(t *testing.T) {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if team != expectedTeam {
+		if !compareTeams(expectedTeam, team) {
 			t.Errorf("expected %+v, got %+v", expectedTeam, team)
 		}
 	})
@@ -122,6 +135,16 @@ func TestTeamStore_DeleteByID(t *testing.T) {
 	}
 }
 
+// compareTeamMembers will check two user.TeamMember objects for equality.
+// Mostly exists for proper timestamp comparison.
+func compareTeamMembers(tm1 user.TeamMember, tm2 user.TeamMember) bool {
+	return tm1.UserID == tm2.UserID &&
+		tm1.TeamID == tm2.TeamID &&
+		tm1.Username == tm2.Username &&
+		tm1.Role == tm2.Role &&
+		tm1.CreatedAt.Equal(tm2.CreatedAt)
+}
+
 func TestTeamStore_GetTeamMember(t *testing.T) {
 	db := getDatabaseConnection(t)
 	s := NewTeamStore(db)
@@ -129,12 +152,14 @@ func TestTeamStore_GetTeamMember(t *testing.T) {
 	t.Run("existing team member", func(t *testing.T) {
 		teamID, _ := uuid.Parse("0195d46e-cfbf-7324-b9aa-4c9c78d3b722")
 		userID, _ := uuid.Parse("0195cd11-2863-71d4-a3c4-032bc264cf81")
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 
 		expectedTeamMember := user.TeamMember{
-			UserID:   userID,
-			TeamID:   teamID,
-			Username: "adminuser",
-			Role:     user.TeamMemberRoleAdmin,
+			UserID:    userID,
+			TeamID:    teamID,
+			Username:  "adminuser",
+			Role:      user.TeamMemberRoleAdmin,
+			CreatedAt: createdAt,
 		}
 
 		member, err := s.GetTeamMember(t.Context(), teamID, userID)
@@ -142,7 +167,7 @@ func TestTeamStore_GetTeamMember(t *testing.T) {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if member != expectedTeamMember {
+		if !compareTeamMembers(expectedTeamMember, member) {
 			t.Errorf("expected %+v, got %+v", expectedTeamMember, member)
 		}
 	})

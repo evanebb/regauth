@@ -9,6 +9,17 @@ import (
 	"time"
 )
 
+// compareTokens will check two token.PersonalAccessToken objects for equality.
+// Mostly exists for proper timestamp comparison.
+func compareTokens(t1 token.PersonalAccessToken, t2 token.PersonalAccessToken) bool {
+	return t1.ID == t2.ID &&
+		t1.Description == t2.Description &&
+		t1.Permission == t2.Permission &&
+		t1.ExpirationDate.Equal(t2.ExpirationDate) &&
+		t1.UserID == t2.UserID &&
+		t1.CreatedAt.Equal(t2.CreatedAt)
+}
+
 func TestPersonalAccessTokenStore_GetAllByUser(t *testing.T) {
 	db := getDatabaseConnection(t)
 	s := NewPersonalAccessTokenStore(db)
@@ -34,6 +45,7 @@ func TestPersonalAccessTokenStore_GetByID(t *testing.T) {
 		userID, _ := uuid.Parse("0195cd11-2863-71d4-a3c4-032bc264cf81")
 		tokenID, _ := uuid.Parse("0195cd16-2142-78e5-8425-a8db7acbc8f8")
 		expirationDate, _ := time.Parse(time.RFC3339, "2045-03-25T12:16:33.110405Z")
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 
 		expectedToken := token.PersonalAccessToken{
 			ID:             tokenID,
@@ -41,6 +53,7 @@ func TestPersonalAccessTokenStore_GetByID(t *testing.T) {
 			Permission:     token.PermissionReadOnly,
 			ExpirationDate: expirationDate,
 			UserID:         userID,
+			CreatedAt:      createdAt,
 		}
 
 		tok, err := s.GetByID(t.Context(), tokenID)
@@ -48,7 +61,7 @@ func TestPersonalAccessTokenStore_GetByID(t *testing.T) {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if tok != expectedToken {
+		if !compareTokens(expectedToken, tok) {
 			t.Errorf("expected %+v, got %+v", expectedToken, tok)
 		}
 	})
@@ -68,6 +81,7 @@ func TestPersonalAccessTokenStore_GetByPlainTextToken(t *testing.T) {
 		userID, _ := uuid.Parse("0195cd11-2863-71d4-a3c4-032bc264cf81")
 		tokenID, _ := uuid.Parse("0195cd16-2142-78e5-8425-a8db7acbc8f8")
 		expirationDate, _ := time.Parse(time.RFC3339, "2045-03-25T12:16:33.110405Z")
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 
 		expectedToken := token.PersonalAccessToken{
 			ID:             tokenID,
@@ -75,6 +89,7 @@ func TestPersonalAccessTokenStore_GetByPlainTextToken(t *testing.T) {
 			Permission:     token.PermissionReadOnly,
 			ExpirationDate: expirationDate,
 			UserID:         userID,
+			CreatedAt:      createdAt,
 		}
 
 		plainTextToken := "registry_pat_SVV_otfQNmSjo7viDiCrC0AKe6Qa_iFhxXJBZE1vMOByC9nbUtBPsz3r"
@@ -83,7 +98,7 @@ func TestPersonalAccessTokenStore_GetByPlainTextToken(t *testing.T) {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if tok != expectedToken {
+		if !compareTokens(expectedToken, tok) {
 			t.Errorf("expected %+v, got %+v", expectedToken, tok)
 		}
 	})

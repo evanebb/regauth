@@ -21,7 +21,7 @@ func NewPersonalAccessTokenStore(db *pgxpool.Pool) PersonalAccessTokenStore {
 func (s PersonalAccessTokenStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]token.PersonalAccessToken, error) {
 	var tokens []token.PersonalAccessToken
 
-	query := "SELECT id, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE user_id = $1"
+	query := "SELECT id, description, permission, expiration_date, user_id, created_at FROM personal_access_tokens WHERE user_id = $1"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, userID)
 	if err != nil {
 		return tokens, err
@@ -31,7 +31,7 @@ func (s PersonalAccessTokenStore) GetAllByUser(ctx context.Context, userID uuid.
 		var t token.PersonalAccessToken
 		var pt string
 
-		err = rows.Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
+		err = rows.Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID, &t.CreatedAt)
 		if err != nil {
 			return t, err
 		}
@@ -46,8 +46,8 @@ func (s PersonalAccessTokenStore) GetByID(ctx context.Context, id uuid.UUID) (to
 	var t token.PersonalAccessToken
 	var pt string
 
-	query := "SELECT id, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE id = $1"
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
+	query := "SELECT id, description, permission, expiration_date, user_id, created_at FROM personal_access_tokens WHERE id = $1"
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&t.ID, &t.Description, &pt, &t.ExpirationDate, &t.UserID, &t.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return t, token.ErrNotFound
@@ -68,7 +68,7 @@ func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plain
 
 	// Select all tokens of which the stored last eight characters match the plain-text token
 	lastEight := plainTextToken[len(plainTextToken)-8:]
-	query := "SELECT id, hash, description, permission, expiration_date, user_id FROM personal_access_tokens WHERE last_eight = $1"
+	query := "SELECT id, hash, description, permission, expiration_date, user_id, created_at FROM personal_access_tokens WHERE last_eight = $1"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query, lastEight)
 	if err != nil {
 		return token.PersonalAccessToken{}, err
@@ -80,7 +80,7 @@ func (s PersonalAccessTokenStore) GetByPlainTextToken(ctx context.Context, plain
 		var pt string
 		var hash []byte
 
-		err = rows.Scan(&t.ID, &hash, &t.Description, &pt, &t.ExpirationDate, &t.UserID)
+		err = rows.Scan(&t.ID, &hash, &t.Description, &pt, &t.ExpirationDate, &t.UserID, &t.CreatedAt)
 		if err != nil {
 			continue
 		}

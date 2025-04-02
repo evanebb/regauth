@@ -3,12 +3,14 @@ package user
 import (
 	"github.com/google/uuid"
 	"regexp"
+	"time"
 )
 
 type User struct {
-	ID       uuid.UUID `json:"id"`
-	Username Username  `json:"username"`
-	Role     Role      `json:"role"`
+	ID        uuid.UUID `json:"id"`
+	Username  Username  `json:"username"`
+	Role      Role      `json:"role"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 func (u User) IsValid() error {

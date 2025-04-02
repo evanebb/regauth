@@ -508,11 +508,14 @@ components:
     RepositoryResponse:
       allOf:
         - type: object
-          required: [ id ]
+          required: [ id, createdAt ]
           properties:
             id:
               type: string
               format: uuid
+            createdAt:
+              type: string
+              format: date-time
         - $ref: "#/components/schemas/RepositoryRequest"
     PersonalAccessTokenRequest:
       type: object
@@ -530,11 +533,14 @@ components:
     PersonalAccessTokenResponse:
       allOf:
         - type: object
-          required: [ id ]
+          required: [ id, createdAt ]
           properties:
             id:
               type: string
               format: uuid
+            createdAt:
+              type: string
+              format: date-time
         - $ref: "#/components/schemas/PersonalAccessTokenRequest"
     PersonalAccessTokenCreationResponse:
       allOf:
@@ -556,11 +562,14 @@ components:
     TeamResponse:
       allOf:
         - type: object
-          required: [ id ]
+          required: [ id, createdAt ]
           properties:
             id:
               type: string
               format: uuid
+            createdAt:
+              type: string
+              format: date-time
         - $ref: "#/components/schemas/TeamRequest"
     TeamMemberRequest:
       type: object
@@ -575,11 +584,14 @@ components:
     TeamMemberResponse:
       allOf:
         - type: object
-          required: [ userId ]
+          required: [ userId, createdAt ]
           properties:
             userId:
               type: string
               format: uuid
+            createdAt:
+              type: string
+              format: date-time
         - $ref: "#/components/schemas/TeamMemberRequest"
     UserRequest:
       type: object
@@ -594,11 +606,14 @@ components:
     UserResponse:
       allOf:
         - type: object
-          required: [ id ]
+          required: [ id, createdAt ]
           properties:
             id:
               type: string
               format: uuid
+            createdAt:
+              type: string
+              format: date-time
         - $ref: "#/components/schemas/UserRequest"
     UserPasswordChangeRequest:
       type: object

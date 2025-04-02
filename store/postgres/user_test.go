@@ -5,7 +5,17 @@ import (
 	"github.com/evanebb/regauth/user"
 	"github.com/google/uuid"
 	"testing"
+	"time"
 )
+
+// compareUsers will check two user.User objects for equality.
+// Mostly exists for proper timestamp comparison.
+func compareUsers(u1 user.User, u2 user.User) bool {
+	return u1.ID == u2.ID &&
+		u1.Username == u2.Username &&
+		u1.Role == u2.Role &&
+		u1.CreatedAt.Equal(u2.CreatedAt)
+}
 
 func TestUserStore_GetAll(t *testing.T) {
 	db := getDatabaseConnection(t)
@@ -28,14 +38,21 @@ func TestUserStore_GetByID(t *testing.T) {
 
 	t.Run("existing user", func(t *testing.T) {
 		userID, _ := uuid.Parse("0195cd11-2863-71d4-a3c4-032bc264cf81")
-		expectedUser := user.User{ID: userID, Username: "adminuser", Role: user.RoleAdmin}
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
+
+		expectedUser := user.User{
+			ID:        userID,
+			Username:  "adminuser",
+			Role:      user.RoleAdmin,
+			CreatedAt: createdAt,
+		}
 
 		u, err := s.GetByID(t.Context(), userID)
 		if err != nil {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if u != expectedUser {
+		if !compareUsers(expectedUser, u) {
 			t.Errorf("expected %+v, got %+v", expectedUser, u)
 		}
 	})
@@ -54,14 +71,21 @@ func TestUserStore_GetByUsername(t *testing.T) {
 	t.Run("existing user", func(t *testing.T) {
 		userID, _ := uuid.Parse("0195cd11-2863-71d4-a3c4-032bc264cf81")
 		username := "adminuser"
-		expectedUser := user.User{ID: userID, Username: user.Username(username), Role: user.RoleAdmin}
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
+
+		expectedUser := user.User{
+			ID:        userID,
+			Username:  user.Username(username),
+			Role:      user.RoleAdmin,
+			CreatedAt: createdAt,
+		}
 
 		u, err := s.GetByUsername(t.Context(), username)
 		if err != nil {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if u != expectedUser {
+		if !compareUsers(expectedUser, u) {
 			t.Errorf("expected %+v, got %+v", expectedUser, u)
 		}
 	})

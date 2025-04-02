@@ -13,6 +13,7 @@ type PersonalAccessToken struct {
 	Permission     Permission  `json:"permission"`
 	ExpirationDate time.Time   `json:"expirationDate"`
 	UserID         uuid.UUID   `json:"-"`
+	CreatedAt      time.Time   `json:"createdAt"`
 }
 
 func (t PersonalAccessToken) IsValid() error {

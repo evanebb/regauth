@@ -25,7 +25,8 @@ func (s RepositoryStore) GetAllByNamespace(ctx context.Context, namespaces ...st
 			repositories.id,
 			namespaces.name as namespace,
 			repositories.name,
-			repositories.visibility
+			repositories.visibility,
+			repositories.created_at
 		FROM repositories
 		JOIN namespaces ON repositories.namespace_id = namespaces.id
 		WHERE namespaces.name = ANY($1)
@@ -38,7 +39,7 @@ func (s RepositoryStore) GetAllByNamespace(ctx context.Context, namespaces ...st
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (repository.Repository, error) {
 		var r repository.Repository
 
-		err = rows.Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
+		err = rows.Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.CreatedAt)
 		if err != nil {
 			return r, err
 		}
@@ -55,12 +56,13 @@ func (s RepositoryStore) GetByNamespaceAndName(ctx context.Context, namespace st
 			repositories.id,
 			namespaces.name as namespace,
 			repositories.name,
-			repositories.visibility
+			repositories.visibility,
+			repositories.created_at
 		FROM repositories
 		JOIN namespaces ON repositories.namespace_id = namespaces.id
 		WHERE namespaces.name = $1 AND repositories.name = $2
 		`
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, namespace, name).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, namespace, name).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return r, repository.ErrNotFound
@@ -80,12 +82,13 @@ func (s RepositoryStore) GetByID(ctx context.Context, id uuid.UUID) (repository.
 			repositories.id,
 			namespaces.name as namespace,
 			repositories.name,
-			repositories.visibility
+			repositories.visibility,
+			repositories.created_at
 		FROM repositories
 		JOIN namespaces ON repositories.namespace_id = namespaces.id
 		WHERE repositories.id = $1
 		`
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility)
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&r.ID, &r.Namespace, &r.Name, &r.Visibility, &r.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return r, repository.ErrNotFound

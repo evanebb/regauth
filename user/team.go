@@ -3,11 +3,13 @@ package user
 import (
 	"github.com/google/uuid"
 	"regexp"
+	"time"
 )
 
 type Team struct {
-	ID   uuid.UUID `json:"id"`
-	Name TeamName  `json:"name"`
+	ID        uuid.UUID `json:"id"`
+	Name      TeamName  `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 func (t Team) IsValid() error {
@@ -40,10 +42,11 @@ func (n TeamName) IsValid() error {
 }
 
 type TeamMember struct {
-	UserID   uuid.UUID      `json:"userId"`
-	TeamID   uuid.UUID      `json:"-"`
-	Username Username       `json:"username"`
-	Role     TeamMemberRole `json:"role"`
+	UserID    uuid.UUID      `json:"userId"`
+	TeamID    uuid.UUID      `json:"-"`
+	Username  Username       `json:"username"`
+	Role      TeamMemberRole `json:"role"`
+	CreatedAt time.Time      `json:"createdAt"`
 }
 
 func (m TeamMember) IsValid() error {
