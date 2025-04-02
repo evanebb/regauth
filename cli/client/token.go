@@ -46,9 +46,9 @@ func newListTokensCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "ID\tDESCRIPTION\tPERMISSION\tEXPIRATION")
+			_, _ = fmt.Fprintln(w, "ID\tDESCRIPTION\tPERMISSION\tEXPIRATION\tCREATED")
 			for _, token := range res {
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", token.ID, token.Description, token.Permission, token.ExpirationDate)
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", token.ID, token.Description, token.Permission, token.ExpirationDate, token.CreatedAt)
 			}
 			_ = w.Flush()
 
@@ -85,8 +85,8 @@ func newGetTokenCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "ID\tDESCRIPTION\tPERMISSION\tEXPIRATION")
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", token.ID, token.Description, token.Permission, token.ExpirationDate)
+			_, _ = fmt.Fprintln(w, "ID\tDESCRIPTION\tPERMISSION\tEXPIRATION\tCREATED")
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", token.ID, token.Description, token.Permission, token.ExpirationDate, token.CreatedAt)
 			_ = w.Flush()
 
 			return nil

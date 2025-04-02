@@ -45,9 +45,9 @@ func newListTeamsCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "NAME\tID")
+			_, _ = fmt.Fprintln(w, "NAME\tCREATED\tID")
 			for _, team := range res {
-				_, _ = fmt.Fprintf(w, "%s\t%s\n", team.Name, team.ID.String())
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", team.Name, team.CreatedAt, team.ID)
 			}
 			_ = w.Flush()
 
@@ -79,8 +79,8 @@ func newGetTeamCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "NAME\tID")
-			_, _ = fmt.Fprintf(w, "%s\t%s\n", team.Name, team.ID.String())
+			_, _ = fmt.Fprintln(w, "NAME\tCREATED\tID")
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", team.Name, team.CreatedAt, team.ID)
 			_ = w.Flush()
 
 			return nil
@@ -183,9 +183,9 @@ func newListTeamMembersCmd(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "USERNAME\tROLE\tUSER ID")
+			_, _ = fmt.Fprintln(w, "USERNAME\tROLE\tCREATED\tUSER ID")
 			for _, member := range res {
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", member.Username, member.Role, member.UserId)
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", member.Username, member.Role, member.CreatedAt, member.UserId)
 			}
 			_ = w.Flush()
 

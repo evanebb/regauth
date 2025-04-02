@@ -5,7 +5,18 @@ import (
 	"github.com/evanebb/regauth/repository"
 	"github.com/google/uuid"
 	"testing"
+	"time"
 )
+
+// compareRepositories will check two repository.Repository objects for equality.
+// Mostly exists for proper timestamp comparison.
+func compareRepositories(r1 repository.Repository, r2 repository.Repository) bool {
+	return r1.ID == r2.ID &&
+		r1.Namespace == r2.Namespace &&
+		r1.Name == r2.Name &&
+		r1.Visibility == r2.Visibility &&
+		r1.CreatedAt.Equal(r2.CreatedAt)
+}
 
 func TestRepositoryStore_GetAllByNamespace(t *testing.T) {
 	db := getDatabaseConnection(t)
@@ -27,12 +38,14 @@ func TestRepositoryStore_GetByNamespaceAndName(t *testing.T) {
 
 	t.Run("existing repository", func(t *testing.T) {
 		repoID, _ := uuid.Parse("0195cd13-ba14-76fd-b43e-55f190e566bd")
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 
 		expectedRepo := repository.Repository{
 			ID:         repoID,
 			Namespace:  "adminuser",
 			Name:       "public-image",
 			Visibility: repository.VisibilityPublic,
+			CreatedAt:  createdAt,
 		}
 
 		repo, err := s.GetByNamespaceAndName(t.Context(), "adminuser", "public-image")
@@ -40,7 +53,7 @@ func TestRepositoryStore_GetByNamespaceAndName(t *testing.T) {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if repo != expectedRepo {
+		if !compareRepositories(expectedRepo, repo) {
 			t.Errorf("expected %+v, got %+v", expectedRepo, repo)
 		}
 	})
@@ -58,12 +71,14 @@ func TestRepositoryStore_GetByID(t *testing.T) {
 
 	t.Run("existing repository", func(t *testing.T) {
 		repoID, _ := uuid.Parse("0195cd13-ba14-76fd-b43e-55f190e566bd")
+		createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 
 		expectedRepo := repository.Repository{
 			ID:         repoID,
 			Namespace:  "adminuser",
 			Name:       "public-image",
 			Visibility: repository.VisibilityPublic,
+			CreatedAt:  createdAt,
 		}
 
 		repo, err := s.GetByID(t.Context(), repoID)
@@ -71,7 +86,7 @@ func TestRepositoryStore_GetByID(t *testing.T) {
 			t.Errorf("expected err to be nil, got %q", err)
 		}
 
-		if repo != expectedRepo {
+		if !compareRepositories(expectedRepo, repo) {
 			t.Errorf("expected %+v, got %+v", expectedRepo, repo)
 		}
 	})

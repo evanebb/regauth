@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Repository struct {
@@ -11,6 +12,7 @@ type Repository struct {
 	Namespace  string     `json:"namespace"`
 	Name       Name       `json:"name"`
 	Visibility Visibility `json:"visibility"`
+	CreatedAt  time.Time  `json:"createdAt"`
 }
 
 func (r Repository) IsValid() error {

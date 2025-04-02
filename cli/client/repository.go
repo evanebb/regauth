@@ -44,9 +44,9 @@ func newListRepositoriesCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "NAMESPACE\tNAME\tVISIBILITY\tID")
+			_, _ = fmt.Fprintln(w, "NAMESPACE\tNAME\tVISIBILITY\tCREATED\tID")
 			for _, repo := range res {
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", repo.Namespace, repo.Name, string(repo.Visibility), repo.ID.String())
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", repo.Namespace, repo.Name, repo.Visibility, repo.CreatedAt, repo.ID)
 			}
 			_ = w.Flush()
 
@@ -80,8 +80,8 @@ func newGetRepositoryCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "NAMESPACE\tNAME\tVISIBILITY\tID")
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", repo.Namespace, repo.Name, string(repo.Visibility), repo.ID.String())
+			_, _ = fmt.Fprintln(w, "NAMESPACE\tNAME\tVISIBILITY\tCREATED\tID")
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", repo.Namespace, repo.Name, repo.Visibility, repo.CreatedAt, repo.ID)
 			_ = w.Flush()
 
 			return nil

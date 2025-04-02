@@ -45,9 +45,9 @@ func newListUsersCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "USERNAME\tROLE\tID")
+			_, _ = fmt.Fprintln(w, "USERNAME\tROLE\tCREATED\tID")
 			for _, user := range res {
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", user.Username, user.Role, user.ID)
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", user.Username, user.Role, user.CreatedAt, user.ID)
 			}
 			_ = w.Flush()
 
@@ -79,8 +79,8 @@ func newGetUserCommand(client *oas.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
-			_, _ = fmt.Fprintln(w, "USERNAME\tROLE\tID")
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", user.Username, user.Role, user.ID)
+			_, _ = fmt.Fprintln(w, "USERNAME\tROLE\tCREATED\tID")
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", user.Username, user.Role, user.CreatedAt, user.ID)
 			_ = w.Flush()
 
 			return nil

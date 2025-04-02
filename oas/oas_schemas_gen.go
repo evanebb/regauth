@@ -88,6 +88,7 @@ func (s *PersonalAccessToken) SetToken(val string) {
 // Ref: #/components/schemas/PersonalAccessTokenCreationResponse
 type PersonalAccessTokenCreationResponse struct {
 	ID             uuid.UUID                                     `json:"id"`
+	CreatedAt      time.Time                                     `json:"createdAt"`
 	Description    string                                        `json:"description"`
 	Permission     PersonalAccessTokenCreationResponsePermission `json:"permission"`
 	ExpirationDate time.Time                                     `json:"expirationDate"`
@@ -99,6 +100,11 @@ type PersonalAccessTokenCreationResponse struct {
 // GetID returns the value of ID.
 func (s *PersonalAccessTokenCreationResponse) GetID() uuid.UUID {
 	return s.ID
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *PersonalAccessTokenCreationResponse) GetCreatedAt() time.Time {
+	return s.CreatedAt
 }
 
 // GetDescription returns the value of Description.
@@ -124,6 +130,11 @@ func (s *PersonalAccessTokenCreationResponse) GetToken() string {
 // SetID sets the value of ID.
 func (s *PersonalAccessTokenCreationResponse) SetID(val uuid.UUID) {
 	s.ID = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *PersonalAccessTokenCreationResponse) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
 }
 
 // SetDescription sets the value of Description.
@@ -283,6 +294,7 @@ func (s *PersonalAccessTokenRequestPermission) UnmarshalText(data []byte) error 
 // Ref: #/components/schemas/PersonalAccessTokenResponse
 type PersonalAccessTokenResponse struct {
 	ID             uuid.UUID                             `json:"id"`
+	CreatedAt      time.Time                             `json:"createdAt"`
 	Description    string                                `json:"description"`
 	Permission     PersonalAccessTokenResponsePermission `json:"permission"`
 	ExpirationDate time.Time                             `json:"expirationDate"`
@@ -291,6 +303,11 @@ type PersonalAccessTokenResponse struct {
 // GetID returns the value of ID.
 func (s *PersonalAccessTokenResponse) GetID() uuid.UUID {
 	return s.ID
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *PersonalAccessTokenResponse) GetCreatedAt() time.Time {
+	return s.CreatedAt
 }
 
 // GetDescription returns the value of Description.
@@ -311,6 +328,11 @@ func (s *PersonalAccessTokenResponse) GetExpirationDate() time.Time {
 // SetID sets the value of ID.
 func (s *PersonalAccessTokenResponse) SetID(val uuid.UUID) {
 	s.ID = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *PersonalAccessTokenResponse) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
 }
 
 // SetDescription sets the value of Description.
@@ -461,6 +483,7 @@ func (s *RepositoryRequestVisibility) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/RepositoryResponse
 type RepositoryResponse struct {
 	ID         uuid.UUID                    `json:"id"`
+	CreatedAt  time.Time                    `json:"createdAt"`
 	Namespace  string                       `json:"namespace"`
 	Name       string                       `json:"name"`
 	Visibility RepositoryResponseVisibility `json:"visibility"`
@@ -469,6 +492,11 @@ type RepositoryResponse struct {
 // GetID returns the value of ID.
 func (s *RepositoryResponse) GetID() uuid.UUID {
 	return s.ID
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *RepositoryResponse) GetCreatedAt() time.Time {
+	return s.CreatedAt
 }
 
 // GetNamespace returns the value of Namespace.
@@ -489,6 +517,11 @@ func (s *RepositoryResponse) GetVisibility() RepositoryResponseVisibility {
 // SetID sets the value of ID.
 func (s *RepositoryResponse) SetID(val uuid.UUID) {
 	s.ID = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *RepositoryResponse) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
 }
 
 // SetNamespace sets the value of Namespace.
@@ -617,14 +650,20 @@ func (s *TeamMemberRequestRole) UnmarshalText(data []byte) error {
 // Merged schema.
 // Ref: #/components/schemas/TeamMemberResponse
 type TeamMemberResponse struct {
-	UserId   uuid.UUID              `json:"userId"`
-	Username string                 `json:"username"`
-	Role     TeamMemberResponseRole `json:"role"`
+	UserId    uuid.UUID              `json:"userId"`
+	CreatedAt time.Time              `json:"createdAt"`
+	Username  string                 `json:"username"`
+	Role      TeamMemberResponseRole `json:"role"`
 }
 
 // GetUserId returns the value of UserId.
 func (s *TeamMemberResponse) GetUserId() uuid.UUID {
 	return s.UserId
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *TeamMemberResponse) GetCreatedAt() time.Time {
+	return s.CreatedAt
 }
 
 // GetUsername returns the value of Username.
@@ -640,6 +679,11 @@ func (s *TeamMemberResponse) GetRole() TeamMemberResponseRole {
 // SetUserId sets the value of UserId.
 func (s *TeamMemberResponse) SetUserId(val uuid.UUID) {
 	s.UserId = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *TeamMemberResponse) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
 }
 
 // SetUsername sets the value of Username.
@@ -711,13 +755,19 @@ func (s *TeamRequest) SetName(val string) {
 // Merged schema.
 // Ref: #/components/schemas/TeamResponse
 type TeamResponse struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	Name      string    `json:"name"`
 }
 
 // GetID returns the value of ID.
 func (s *TeamResponse) GetID() uuid.UUID {
 	return s.ID
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *TeamResponse) GetCreatedAt() time.Time {
+	return s.CreatedAt
 }
 
 // GetName returns the value of Name.
@@ -728,6 +778,11 @@ func (s *TeamResponse) GetName() string {
 // SetID sets the value of ID.
 func (s *TeamResponse) SetID(val uuid.UUID) {
 	s.ID = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *TeamResponse) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
 }
 
 // SetName sets the value of Name.
@@ -820,14 +875,20 @@ func (s *UserRequestRole) UnmarshalText(data []byte) error {
 // Merged schema.
 // Ref: #/components/schemas/UserResponse
 type UserResponse struct {
-	ID       uuid.UUID        `json:"id"`
-	Username string           `json:"username"`
-	Role     UserResponseRole `json:"role"`
+	ID        uuid.UUID        `json:"id"`
+	CreatedAt time.Time        `json:"createdAt"`
+	Username  string           `json:"username"`
+	Role      UserResponseRole `json:"role"`
 }
 
 // GetID returns the value of ID.
 func (s *UserResponse) GetID() uuid.UUID {
 	return s.ID
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *UserResponse) GetCreatedAt() time.Time {
+	return s.CreatedAt
 }
 
 // GetUsername returns the value of Username.
@@ -843,6 +904,11 @@ func (s *UserResponse) GetRole() UserResponseRole {
 // SetID sets the value of ID.
 func (s *UserResponse) SetID(val uuid.UUID) {
 	s.ID = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *UserResponse) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
 }
 
 // SetUsername sets the value of Username.

@@ -23,7 +23,8 @@ func (s TeamStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]user.T
 	query := `
 		SELECT
 			teams.id,
-			teams.name
+			teams.name,
+			teams.created_at
 		FROM teams
 		JOIN team_members ON teams.id = team_members.team_id
 		JOIN users ON team_members.user_id = users.id
@@ -37,7 +38,7 @@ func (s TeamStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]user.T
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (user.Team, error) {
 		var t user.Team
 
-		if err := rows.Scan(&t.ID, &t.Name); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.CreatedAt); err != nil {
 			return t, err
 		}
 
@@ -48,8 +49,8 @@ func (s TeamStore) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]user.T
 func (s TeamStore) GetByID(ctx context.Context, id uuid.UUID) (user.Team, error) {
 	var t user.Team
 
-	query := "SELECT id, name FROM teams WHERE id = $1"
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&t.ID, &t.Name)
+	query := "SELECT id, name, created_at FROM teams WHERE id = $1"
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&t.ID, &t.Name, &t.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return t, user.ErrTeamNotFound
@@ -64,8 +65,8 @@ func (s TeamStore) GetByID(ctx context.Context, id uuid.UUID) (user.Team, error)
 func (s TeamStore) GetByName(ctx context.Context, name string) (user.Team, error) {
 	var t user.Team
 
-	query := "SELECT id, name FROM teams WHERE name = $1"
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, name).Scan(&t.ID, &t.Name)
+	query := "SELECT id, name, created_at FROM teams WHERE name = $1"
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, name).Scan(&t.ID, &t.Name, &t.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return t, user.ErrTeamNotFound
@@ -121,13 +122,14 @@ func (s TeamStore) GetTeamMember(ctx context.Context, teamID uuid.UUID, userID u
 			team_members.user_id,
 			team_members.team_id,
 			users.username,
-			team_members.role
+			team_members.role,
+			team_members.created_at
 		FROM team_members
 		JOIN users ON team_members.user_id = users.id
 		WHERE team_id = $1
 		AND users.id = $2
 		`
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, teamID, userID).Scan(&tm.UserID, &tm.TeamID, &tm.Username, &tm.Role)
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, teamID, userID).Scan(&tm.UserID, &tm.TeamID, &tm.Username, &tm.Role, &tm.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return tm, user.ErrTeamMemberNotFound
@@ -147,7 +149,8 @@ func (s TeamStore) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]user
 			team_members.user_id,
 			team_members.team_id,
 			users.username,
-			team_members.role
+			team_members.role,
+			team_members.created_at
 		FROM team_members
 		JOIN teams ON team_members.team_id = teams.id
 		JOIN users ON team_members.user_id = users.id
@@ -161,7 +164,7 @@ func (s TeamStore) GetTeamMembers(ctx context.Context, teamID uuid.UUID) ([]user
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (user.TeamMember, error) {
 		var tm user.TeamMember
 
-		if err := rows.Scan(&tm.UserID, &tm.TeamID, &tm.Username, &tm.Role); err != nil {
+		if err := rows.Scan(&tm.UserID, &tm.TeamID, &tm.Username, &tm.Role, &tm.CreatedAt); err != nil {
 			return tm, err
 		}
 

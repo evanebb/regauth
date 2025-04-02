@@ -60,7 +60,7 @@ CREATE TABLE personal_access_tokens
     last_eight      varchar(8)                              NOT NULL,
     description     varchar(255)                            NOT NULL,
     permission      token_permission                        NOT NULL,
-    expiration_date timestamp,
+    expiration_date timestamptz,
     user_id         uuid REFERENCES users ON DELETE CASCADE NOT NULL,
     created_at      timestamptz                             NOT NULL DEFAULT now()
 );

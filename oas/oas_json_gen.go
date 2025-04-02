@@ -123,6 +123,10 @@ func (s *PersonalAccessTokenCreationResponse) encodeFields(e *jx.Encoder) {
 		json.EncodeUUID(e, s.ID)
 	}
 	{
+		e.FieldStart("createdAt")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
 		e.FieldStart("description")
 		e.Str(s.Description)
 	}
@@ -140,12 +144,13 @@ func (s *PersonalAccessTokenCreationResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfPersonalAccessTokenCreationResponse = [5]string{
+var jsonFieldsNameOfPersonalAccessTokenCreationResponse = [6]string{
 	0: "id",
-	1: "description",
-	2: "permission",
-	3: "expirationDate",
-	4: "token",
+	1: "createdAt",
+	2: "description",
+	3: "permission",
+	4: "expirationDate",
+	5: "token",
 }
 
 // Decode decodes PersonalAccessTokenCreationResponse from json.
@@ -169,8 +174,20 @@ func (s *PersonalAccessTokenCreationResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "description":
+		case "createdAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "description":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Description = string(v)
@@ -182,7 +199,7 @@ func (s *PersonalAccessTokenCreationResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "permission":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.Permission.Decode(d); err != nil {
 					return err
@@ -192,7 +209,7 @@ func (s *PersonalAccessTokenCreationResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"permission\"")
 			}
 		case "expirationDate":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.ExpirationDate = v
@@ -204,7 +221,7 @@ func (s *PersonalAccessTokenCreationResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"expirationDate\"")
 			}
 		case "token":
-			requiredBitSet[0] |= 1 << 4
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Str()
 				s.Token = string(v)
@@ -225,7 +242,7 @@ func (s *PersonalAccessTokenCreationResponse) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00011111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -497,6 +514,10 @@ func (s *PersonalAccessTokenResponse) encodeFields(e *jx.Encoder) {
 		json.EncodeUUID(e, s.ID)
 	}
 	{
+		e.FieldStart("createdAt")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
 		e.FieldStart("description")
 		e.Str(s.Description)
 	}
@@ -510,11 +531,12 @@ func (s *PersonalAccessTokenResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfPersonalAccessTokenResponse = [4]string{
+var jsonFieldsNameOfPersonalAccessTokenResponse = [5]string{
 	0: "id",
-	1: "description",
-	2: "permission",
-	3: "expirationDate",
+	1: "createdAt",
+	2: "description",
+	3: "permission",
+	4: "expirationDate",
 }
 
 // Decode decodes PersonalAccessTokenResponse from json.
@@ -538,8 +560,20 @@ func (s *PersonalAccessTokenResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "description":
+		case "createdAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "description":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Description = string(v)
@@ -551,7 +585,7 @@ func (s *PersonalAccessTokenResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"description\"")
 			}
 		case "permission":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.Permission.Decode(d); err != nil {
 					return err
@@ -561,7 +595,7 @@ func (s *PersonalAccessTokenResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"permission\"")
 			}
 		case "expirationDate":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				v, err := json.DecodeDateTime(d)
 				s.ExpirationDate = v
@@ -582,7 +616,7 @@ func (s *PersonalAccessTokenResponse) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -852,6 +886,10 @@ func (s *RepositoryResponse) encodeFields(e *jx.Encoder) {
 		json.EncodeUUID(e, s.ID)
 	}
 	{
+		e.FieldStart("createdAt")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
 		e.FieldStart("namespace")
 		e.Str(s.Namespace)
 	}
@@ -865,11 +903,12 @@ func (s *RepositoryResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfRepositoryResponse = [4]string{
+var jsonFieldsNameOfRepositoryResponse = [5]string{
 	0: "id",
-	1: "namespace",
-	2: "name",
-	3: "visibility",
+	1: "createdAt",
+	2: "namespace",
+	3: "name",
+	4: "visibility",
 }
 
 // Decode decodes RepositoryResponse from json.
@@ -893,8 +932,20 @@ func (s *RepositoryResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "namespace":
+		case "createdAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "namespace":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Namespace = string(v)
@@ -906,7 +957,7 @@ func (s *RepositoryResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"namespace\"")
 			}
 		case "name":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.Name = string(v)
@@ -918,7 +969,7 @@ func (s *RepositoryResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		case "visibility":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				if err := s.Visibility.Decode(d); err != nil {
 					return err
@@ -937,7 +988,7 @@ func (s *RepositoryResponse) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -1188,6 +1239,10 @@ func (s *TeamMemberResponse) encodeFields(e *jx.Encoder) {
 		json.EncodeUUID(e, s.UserId)
 	}
 	{
+		e.FieldStart("createdAt")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
 		e.FieldStart("username")
 		e.Str(s.Username)
 	}
@@ -1197,10 +1252,11 @@ func (s *TeamMemberResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfTeamMemberResponse = [3]string{
+var jsonFieldsNameOfTeamMemberResponse = [4]string{
 	0: "userId",
-	1: "username",
-	2: "role",
+	1: "createdAt",
+	2: "username",
+	3: "role",
 }
 
 // Decode decodes TeamMemberResponse from json.
@@ -1224,8 +1280,20 @@ func (s *TeamMemberResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"userId\"")
 			}
-		case "username":
+		case "createdAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "username":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Username = string(v)
@@ -1237,7 +1305,7 @@ func (s *TeamMemberResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"username\"")
 			}
 		case "role":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.Role.Decode(d); err != nil {
 					return err
@@ -1256,7 +1324,7 @@ func (s *TeamMemberResponse) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -1452,14 +1520,19 @@ func (s *TeamResponse) encodeFields(e *jx.Encoder) {
 		json.EncodeUUID(e, s.ID)
 	}
 	{
+		e.FieldStart("createdAt")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
 		e.FieldStart("name")
 		e.Str(s.Name)
 	}
 }
 
-var jsonFieldsNameOfTeamResponse = [2]string{
+var jsonFieldsNameOfTeamResponse = [3]string{
 	0: "id",
-	1: "name",
+	1: "createdAt",
+	2: "name",
 }
 
 // Decode decodes TeamResponse from json.
@@ -1483,8 +1556,20 @@ func (s *TeamResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "name":
+		case "createdAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "name":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Name = string(v)
@@ -1505,7 +1590,7 @@ func (s *TeamResponse) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -1812,6 +1897,10 @@ func (s *UserResponse) encodeFields(e *jx.Encoder) {
 		json.EncodeUUID(e, s.ID)
 	}
 	{
+		e.FieldStart("createdAt")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
 		e.FieldStart("username")
 		e.Str(s.Username)
 	}
@@ -1821,10 +1910,11 @@ func (s *UserResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfUserResponse = [3]string{
+var jsonFieldsNameOfUserResponse = [4]string{
 	0: "id",
-	1: "username",
-	2: "role",
+	1: "createdAt",
+	2: "username",
+	3: "role",
 }
 
 // Decode decodes UserResponse from json.
@@ -1848,8 +1938,20 @@ func (s *UserResponse) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "username":
+		case "createdAt":
 			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "username":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.Username = string(v)
@@ -1861,7 +1963,7 @@ func (s *UserResponse) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"username\"")
 			}
 		case "role":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[0] |= 1 << 3
 			if err := func() error {
 				if err := s.Role.Decode(d); err != nil {
 					return err
@@ -1880,7 +1982,7 @@ func (s *UserResponse) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

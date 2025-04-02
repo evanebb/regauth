@@ -20,7 +20,7 @@ func NewUserStore(db *pgxpool.Pool) UserStore {
 func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 	var users []user.User
 
-	query := "SELECT id, username, role FROM users"
+	query := "SELECT id, username, role, created_at FROM users"
 	rows, err := s.QuerierFromContext(ctx).Query(ctx, query)
 	if err != nil {
 		return users, err
@@ -29,7 +29,7 @@ func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (user.User, error) {
 		var u user.User
 
-		err = rows.Scan(&u.ID, &u.Username, &u.Role)
+		err = rows.Scan(&u.ID, &u.Username, &u.Role, &u.CreatedAt)
 		if err != nil {
 			return u, err
 		}
@@ -41,8 +41,8 @@ func (s UserStore) GetAll(ctx context.Context) ([]user.User, error) {
 func (s UserStore) GetByID(ctx context.Context, id uuid.UUID) (user.User, error) {
 	var u user.User
 
-	query := "SELECT id, username, role FROM users WHERE id = $1"
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&u.ID, &u.Username, &u.Role)
+	query := "SELECT id, username, role, created_at FROM users WHERE id = $1"
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&u.ID, &u.Username, &u.Role, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return u, user.ErrNotFound
@@ -57,8 +57,8 @@ func (s UserStore) GetByID(ctx context.Context, id uuid.UUID) (user.User, error)
 func (s UserStore) GetByUsername(ctx context.Context, username string) (user.User, error) {
 	var u user.User
 
-	query := "SELECT id, username, role FROM users WHERE username = $1"
-	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, username).Scan(&u.ID, &u.Username, &u.Role)
+	query := "SELECT id, username, role, created_at FROM users WHERE username = $1"
+	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, username).Scan(&u.ID, &u.Username, &u.Role, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return u, user.ErrNotFound
