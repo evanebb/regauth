@@ -194,6 +194,18 @@ func GetTeam(l *slog.Logger) http.HandlerFunc {
 
 func DeleteTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		currentMember, ok := teamMemberFromContext(r.Context())
+		if !ok {
+			l.ErrorContext(r.Context(), "could not parse team member from request context")
+			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		if currentMember.Role != user.TeamMemberRoleAdmin {
+			response.WriteJSONError(w, http.StatusForbidden, "insufficient permission")
+			return
+		}
+
 		team, ok := teamFromContext(r.Context())
 		if !ok {
 			l.ErrorContext(r.Context(), "could not parse team from request context")
