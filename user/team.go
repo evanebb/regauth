@@ -7,9 +7,9 @@ import (
 )
 
 type Team struct {
-	ID        uuid.UUID `json:"id"`
-	Name      TeamName  `json:"name"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        uuid.UUID
+	Name      TeamName
+	CreatedAt time.Time
 }
 
 func (t Team) IsValid() error {
@@ -42,11 +42,11 @@ func (n TeamName) IsValid() error {
 }
 
 type TeamMember struct {
-	UserID    uuid.UUID      `json:"userId"`
-	TeamID    uuid.UUID      `json:"-"`
-	Username  Username       `json:"username"`
-	Role      TeamMemberRole `json:"role"`
-	CreatedAt time.Time      `json:"createdAt"`
+	UserID    uuid.UUID
+	TeamID    uuid.UUID
+	Username  Username
+	Role      TeamMemberRole
+	CreatedAt time.Time
 }
 
 func (m TeamMember) IsValid() error {
