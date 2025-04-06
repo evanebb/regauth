@@ -88,6 +88,10 @@ func (h UserHandler) GetUser(ctx context.Context, params oas.GetUserParams) (*oa
 }
 
 func (h UserHandler) DeleteUser(ctx context.Context, params oas.DeleteUserParams) error {
+	if err := h.requireRole(ctx, user.RoleAdmin); err != nil {
+		return err
+	}
+
 	currentUser, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
@@ -112,6 +116,10 @@ func (h UserHandler) DeleteUser(ctx context.Context, params oas.DeleteUserParams
 }
 
 func (h UserHandler) ChangeUserPassword(ctx context.Context, req *oas.UserPasswordChangeRequest, params oas.ChangeUserPasswordParams) error {
+	if err := h.requireRole(ctx, user.RoleAdmin); err != nil {
+		return err
+	}
+
 	u, err := h.getUserFromRequest(ctx, params.Username)
 	if err != nil {
 		return err
