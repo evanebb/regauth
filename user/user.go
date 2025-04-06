@@ -7,10 +7,10 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Username  Username  `json:"username"`
-	Role      Role      `json:"role"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        uuid.UUID
+	Username  Username
+	Role      Role
+	CreatedAt time.Time
 }
 
 func (u User) IsValid() error {

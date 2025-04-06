@@ -2,340 +2,268 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"github.com/evanebb/regauth/server/middleware"
-	"github.com/evanebb/regauth/server/response"
+	"github.com/evanebb/regauth/oas"
 	"github.com/evanebb/regauth/user"
-	"github.com/evanebb/regauth/util"
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
-type teamCtxKey struct{}
-type teamMemberCtxKey struct{}
+type TeamHandler struct {
+	logger    *slog.Logger
+	teamStore user.TeamStore
+	userStore user.Store
+}
 
-func TeamParser(l *slog.Logger, s user.TeamStore) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			u, ok := middleware.AuthenticatedUserFromContext(r.Context())
-			if !ok {
-				l.ErrorContext(r.Context(), "could not parse user from request context")
-				response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
-				return
-			}
+func (h TeamHandler) CreateTeam(ctx context.Context, req *oas.TeamRequest) (*oas.TeamResponse, error) {
+	u, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return nil, newInternalServerErrorResponse()
+	}
 
-			name := chi.URLParam(r, "name")
-			if name == "" {
-				response.WriteJSONError(w, http.StatusBadRequest, "no team name given")
-				return
-			}
+	_, err := h.teamStore.GetByName(ctx, req.Name)
+	if err == nil {
+		return nil, newErrorResponse(http.StatusBadRequest, "team already exists")
+	}
 
-			team, err := s.GetByName(r.Context(), name)
-			if err != nil {
-				if errors.Is(err, user.ErrTeamNotFound) {
-					response.WriteJSONError(w, http.StatusNotFound, "team not found")
-					return
-				}
+	if !errors.Is(err, user.ErrTeamNotFound) {
+		h.logger.ErrorContext(ctx, "could not get team", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
 
-				l.ErrorContext(r.Context(), "could not get team", slog.Any("error", err))
-				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-				return
-			}
+	id, err := uuid.NewV7()
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not generate UUID", "error", err)
+		return nil, newInternalServerErrorResponse()
+	}
 
-			teamMember, err := s.GetTeamMember(r.Context(), team.ID, u.ID)
-			if err != nil {
-				if errors.Is(err, user.ErrTeamMemberNotFound) {
-					response.WriteJSONError(w, http.StatusNotFound, "team not found")
-					return
-				}
+	team := user.Team{
+		ID:        id,
+		Name:      user.TeamName(req.Name),
+		CreatedAt: time.Now(),
+	}
 
-				l.ErrorContext(r.Context(), "could not get team member", slog.Any("error", err))
-				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-				return
-			}
+	if err := team.IsValid(); err != nil {
+		return nil, newErrorResponse(http.StatusBadRequest, err.Error())
+	}
 
-			ctx := withTeam(r.Context(), team)
-			ctx = withTeamMember(ctx, teamMember)
-			next.ServeHTTP(w, r.WithContext(ctx))
+	member := user.TeamMember{
+		UserID:    u.ID,
+		TeamID:    team.ID,
+		Username:  u.Username,
+		Role:      user.TeamMemberRoleAdmin,
+		CreatedAt: time.Now(),
+	}
+
+	if err := member.IsValid(); err != nil {
+		return nil, newErrorResponse(http.StatusBadRequest, err.Error())
+	}
+
+	err = h.teamStore.Tx(ctx, func(txCtx context.Context) error {
+		if err := h.teamStore.Create(txCtx, team); err != nil {
+			return err
 		}
-		return http.HandlerFunc(fn)
+
+		// add the current user as an admin to the team
+		if err := h.teamStore.AddTeamMember(txCtx, member); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not create team", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	resp := convertToTeamResponse(team)
+	return &resp, nil
+}
+
+func (h TeamHandler) ListTeams(ctx context.Context) ([]oas.TeamResponse, error) {
+	u, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return nil, newInternalServerErrorResponse()
+	}
+
+	teams, err := h.teamStore.GetAllByUser(ctx, u.ID)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not get teams for user", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	return convertSlice(teams, convertToTeamResponse), nil
+}
+
+func (h TeamHandler) GetTeam(ctx context.Context, params oas.GetTeamParams) (*oas.TeamResponse, error) {
+	team, _, err := h.getTeamAndCurrentMemberFromRequest(ctx, params.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := convertToTeamResponse(team)
+	return &resp, nil
+}
+
+func (h TeamHandler) DeleteTeam(ctx context.Context, params oas.DeleteTeamParams) error {
+	team, member, err := h.getTeamAndCurrentMemberFromRequest(ctx, params.Name)
+	if err != nil {
+		return err
+	}
+
+	if member.Role != user.TeamMemberRoleAdmin {
+		return newErrorResponse(http.StatusForbidden, "insufficient permission")
+	}
+
+	if err := h.teamStore.DeleteByID(ctx, team.ID); err != nil {
+		h.logger.ErrorContext(ctx, "could not delete team", slog.Any("error", err))
+		return newInternalServerErrorResponse()
+	}
+
+	return nil
+}
+
+func (h TeamHandler) AddTeamMember(ctx context.Context, req *oas.TeamMemberRequest, params oas.AddTeamMemberParams) (*oas.TeamMemberResponse, error) {
+	team, currentMember, err := h.getTeamAndCurrentMemberFromRequest(ctx, params.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	if currentMember.Role != user.TeamMemberRoleAdmin {
+		return nil, newErrorResponse(http.StatusForbidden, "insufficient permission")
+	}
+
+	userToAdd, err := h.userStore.GetByUsername(ctx, req.Username)
+	if err != nil {
+		if errors.Is(err, user.ErrNotFound) {
+			return nil, newErrorResponse(http.StatusNotFound, "user not found")
+		}
+
+		h.logger.ErrorContext(ctx, "could not get user", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	newMember := user.TeamMember{
+		UserID:    userToAdd.ID,
+		TeamID:    team.ID,
+		Username:  userToAdd.Username,
+		Role:      user.TeamMemberRole(req.Role),
+		CreatedAt: time.Now(),
+	}
+
+	if err := newMember.IsValid(); err != nil {
+		return nil, newErrorResponse(http.StatusBadRequest, err.Error())
+	}
+
+	if err := h.teamStore.AddTeamMember(ctx, newMember); err != nil {
+		h.logger.ErrorContext(ctx, "could not add team member", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	resp := convertToTeamMemberResponse(newMember)
+	return &resp, nil
+}
+
+func (h TeamHandler) ListTeamMembers(ctx context.Context, params oas.ListTeamMembersParams) ([]oas.TeamMemberResponse, error) {
+	team, _, err := h.getTeamAndCurrentMemberFromRequest(ctx, params.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	members, err := h.teamStore.GetTeamMembers(ctx, team.ID)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not get team members", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	return convertSlice(members, convertToTeamMemberResponse), nil
+}
+
+func (h TeamHandler) RemoveTeamMember(ctx context.Context, params oas.RemoveTeamMemberParams) error {
+	team, currentMember, err := h.getTeamAndCurrentMemberFromRequest(ctx, params.Name)
+	if err != nil {
+		return err
+	}
+
+	if currentMember.Role != user.TeamMemberRoleAdmin {
+		return newErrorResponse(http.StatusForbidden, "insufficient permission")
+	}
+
+	userToRemove, err := h.userStore.GetByUsername(ctx, params.Username)
+	if err != nil {
+		if errors.Is(err, user.ErrNotFound) {
+			return newErrorResponse(http.StatusNotFound, "user not found")
+		}
+
+		h.logger.ErrorContext(ctx, "could not get user", slog.Any("error", err))
+		return newInternalServerErrorResponse()
+	}
+
+	if currentMember.UserID == userToRemove.ID {
+		return newErrorResponse(http.StatusBadRequest, "cannot remove current user from team")
+	}
+
+	if err := h.teamStore.RemoveTeamMember(ctx, team.ID, userToRemove.ID); err != nil {
+		h.logger.ErrorContext(ctx, "could not remove team member", slog.Any("error", err))
+		return newInternalServerErrorResponse()
+	}
+
+	return nil
+}
+
+func (h TeamHandler) getTeamAndCurrentMemberFromRequest(ctx context.Context, name string) (user.Team, user.TeamMember, error) {
+	u, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return user.Team{}, user.TeamMember{}, newInternalServerErrorResponse()
+	}
+
+	team, err := h.teamStore.GetByName(ctx, name)
+	if err != nil {
+		if errors.Is(err, user.ErrTeamNotFound) {
+			return user.Team{}, user.TeamMember{}, newErrorResponse(http.StatusNotFound, "team not found")
+		}
+
+		h.logger.ErrorContext(ctx, "could not get team",
+			slog.Any("error", err),
+			slog.String("name", name))
+		return user.Team{}, user.TeamMember{}, newInternalServerErrorResponse()
+	}
+
+	member, err := h.teamStore.GetTeamMember(ctx, team.ID, u.ID)
+	if err != nil {
+		if errors.Is(err, user.ErrTeamMemberNotFound) {
+			return user.Team{}, user.TeamMember{}, newErrorResponse(http.StatusNotFound, "team not found")
+		}
+
+		h.logger.ErrorContext(ctx, "could not get team member",
+			slog.Any("error", err),
+			slog.String("team", name),
+			slog.String("user", string(u.Username)))
+		return user.Team{}, user.TeamMember{}, newInternalServerErrorResponse()
+	}
+
+	return team, member, nil
+}
+
+func convertToTeamResponse(t user.Team) oas.TeamResponse {
+	return oas.TeamResponse{
+		ID:        t.ID,
+		Name:      string(t.Name),
+		CreatedAt: t.CreatedAt,
 	}
 }
 
-// withTeam sets the given team.Team in the context.
-// Use teamFromContext to retrieve the team.
-func withTeam(ctx context.Context, t user.Team) context.Context {
-	return context.WithValue(ctx, teamCtxKey{}, t)
-}
-
-// teamFromContext parses the current team.Team from the given request context.
-// This requires the team to have been previously set in the context, for example by the TeamParser middleware.
-func teamFromContext(ctx context.Context) (user.Team, bool) {
-	val, ok := ctx.Value(teamCtxKey{}).(user.Team)
-	return val, ok
-}
-
-// withTeamMember sets team membership information for the current user for the current team in the context.
-// Use teamMemberFromContext to retrieve it.
-func withTeamMember(ctx context.Context, tm user.TeamMember) context.Context {
-	return context.WithValue(ctx, teamMemberCtxKey{}, tm)
-}
-
-// teamMemberFromContext parses team membership information for the current user from the given request context.
-// This requires this to have been previously set in the context.
-func teamMemberFromContext(ctx context.Context) (user.TeamMember, bool) {
-	val, ok := ctx.Value(teamMemberCtxKey{}).(user.TeamMember)
-	return val, ok
-}
-
-func CreateTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusUnauthorized, "authenticated failed")
-			return
-		}
-
-		var team user.Team
-		if err := json.NewDecoder(r.Body).Decode(&team); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body given")
-			return
-		}
-
-		_, err := s.GetByName(r.Context(), string(team.Name))
-		if err == nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "team already exists")
-			return
-		}
-
-		if !errors.Is(err, user.ErrTeamNotFound) {
-			l.ErrorContext(r.Context(), "could not get team", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		team.ID, err = uuid.NewV7()
-		if err != nil {
-			l.Error("could not generate UUID", "error", err)
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		member := user.TeamMember{
-			UserID:   u.ID,
-			TeamID:   team.ID,
-			Username: u.Username,
-			Role:     user.TeamMemberRoleAdmin,
-		}
-		if err := member.IsValid(); err != nil {
-			// shouldn't ever happen, just check it anyway
-			response.WriteJSONError(w, http.StatusBadRequest, err.Error())
-		}
-
-		err = s.Tx(r.Context(), func(ctx context.Context) error {
-			if err := s.Create(ctx, team); err != nil {
-				return err
-			}
-
-			// add the current user as an admin to the team
-			if err := s.AddTeamMember(ctx, member); err != nil {
-				return err
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			l.Error("could not create team", "error", err)
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, team)
-	}
-}
-
-func ListTeams(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusUnauthorized, "authenticated failed")
-			return
-		}
-
-		teams, err := s.GetAllByUser(r.Context(), u.ID)
-		if err != nil {
-			l.ErrorContext(r.Context(), "could not get teams for user", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, util.NilSliceToEmpty(teams))
-	}
-}
-
-func GetTeam(l *slog.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		team, ok := teamFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse team from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, team)
-	}
-}
-
-func DeleteTeam(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		currentMember, ok := teamMemberFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse team member from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		if currentMember.Role != user.TeamMemberRoleAdmin {
-			response.WriteJSONError(w, http.StatusForbidden, "insufficient permission")
-			return
-		}
-
-		team, ok := teamFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse team from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		if err := s.DeleteByID(r.Context(), team.ID); err != nil {
-			l.ErrorContext(r.Context(), "could not delete team", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
-type addTeamMemberRequest struct {
-	Username string `json:"username"`
-	Role     string `json:"role"`
-}
-
-func AddTeamMember(l *slog.Logger, teamStore user.TeamStore, userStore user.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		currentMember, ok := teamMemberFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse team member from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		if currentMember.Role != user.TeamMemberRoleAdmin {
-			response.WriteJSONError(w, http.StatusForbidden, "insufficient permission")
-			return
-		}
-
-		var req addTeamMemberRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body given")
-			return
-		}
-
-		userToAdd, err := userStore.GetByUsername(r.Context(), req.Username)
-		if err != nil {
-			response.WriteJSONError(w, http.StatusNotFound, "user not found")
-			return
-		}
-
-		member := user.TeamMember{
-			UserID:   userToAdd.ID,
-			TeamID:   currentMember.TeamID,
-			Username: userToAdd.Username,
-			Role:     user.TeamMemberRole(req.Role),
-		}
-		if err := member.IsValid(); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, err.Error())
-		}
-
-		if err := teamStore.AddTeamMember(r.Context(), member); err != nil {
-			l.ErrorContext(r.Context(), "could not add team member", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, member)
-	}
-}
-
-func ListTeamMembers(l *slog.Logger, s user.TeamStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		team, ok := teamFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse team from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		members, err := s.GetTeamMembers(r.Context(), team.ID)
-		if err != nil {
-			l.ErrorContext(r.Context(), "could not get team members", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, util.NilSliceToEmpty(members))
-	}
-}
-
-func RemoveTeamMember(l *slog.Logger, teamStore user.TeamStore, userStore user.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		currentMember, ok := teamMemberFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse team member from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		if currentMember.Role != user.TeamMemberRoleAdmin {
-			response.WriteJSONError(w, http.StatusForbidden, "insufficient permission")
-			return
-		}
-
-		username := chi.URLParam(r, "username")
-		if username == "" {
-			response.WriteJSONError(w, http.StatusBadRequest, "no username given")
-			return
-		}
-
-		userToRemove, err := userStore.GetByUsername(r.Context(), username)
-		if err != nil {
-			if errors.Is(err, user.ErrNotFound) {
-				response.WriteJSONError(w, http.StatusNotFound, "user not found")
-				return
-			}
-
-			l.ErrorContext(r.Context(), "could not get user", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		if currentMember.UserID == userToRemove.ID {
-			response.WriteJSONError(w, http.StatusBadRequest, "cannot remove current user from team")
-			return
-		}
-
-		if err := teamStore.RemoveTeamMember(r.Context(), currentMember.TeamID, userToRemove.ID); err != nil {
-			l.ErrorContext(r.Context(), "could not remove team member", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+func convertToTeamMemberResponse(tm user.TeamMember) oas.TeamMemberResponse {
+	return oas.TeamMemberResponse{
+		UserId:    tm.UserID,
+		Username:  string(tm.Username),
+		Role:      oas.TeamMemberResponseRole(tm.Role),
+		CreatedAt: tm.CreatedAt,
 	}
 }

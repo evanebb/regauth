@@ -110,13 +110,13 @@ func (s RepositoryStore) Create(ctx context.Context, r repository.Repository) er
 	}
 
 	query := `
-		INSERT INTO repositories (id, namespace_id, name, visibility)
-		SELECT $1, id, $2, $3
+		INSERT INTO repositories (id, namespace_id, name, visibility, created_at)
+		SELECT $1, id, $2, $3, $4
 		FROM namespaces
-		WHERE name = $4
+		WHERE name = $5
 		`
 
-	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, r.ID, r.Name, r.Visibility, r.Namespace)
+	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, r.ID, r.Name, r.Visibility, r.CreatedAt, r.Namespace)
 	return err
 }
 

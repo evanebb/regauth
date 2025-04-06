@@ -1,17 +1,12 @@
 package handlers
 
-import (
-	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-	"net/http"
-)
-
-func getUUIDFromRequest(r *http.Request) (uuid.UUID, error) {
-	u, err := uuid.Parse(chi.URLParam(r, "id"))
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("failed to parse UUID from request: %w", err)
+// convertSlice will convert a slice of type []I to a slice of type []O, using the provided conversion function to
+// convert each item in the input slice.
+func convertSlice[I any, O any](in []I, conversionFunc func(in I) O) []O {
+	out := make([]O, len(in))
+	for i := 0; i < len(in); i++ {
+		out[i] = conversionFunc(in[i])
 	}
 
-	return u, nil
+	return out
 }

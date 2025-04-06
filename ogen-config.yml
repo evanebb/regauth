@@ -1,5 +1,4 @@
 generator:
   features:
     disable:
-      - 'paths/server'
       - 'ogen/otel'

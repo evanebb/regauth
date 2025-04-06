@@ -5,9 +5,70 @@ package oas
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/go-faster/errors"
+
+	"github.com/ogen-go/ogen/ogenerrors"
 )
+
+// SecurityHandler is handler for security parameters.
+type SecurityHandler interface {
+	// HandlePersonalAccessToken handles personalAccessToken security.
+	HandlePersonalAccessToken(ctx context.Context, operationName OperationName, t PersonalAccessToken) (context.Context, error)
+	// HandleUsernamePassword handles usernamePassword security.
+	HandleUsernamePassword(ctx context.Context, operationName OperationName, t UsernamePassword) (context.Context, error)
+}
+
+func findAuthorization(h http.Header, prefix string) (string, bool) {
+	v, ok := h["Authorization"]
+	if !ok {
+		return "", false
+	}
+	for _, vv := range v {
+		scheme, value, ok := strings.Cut(vv, " ")
+		if !ok || !strings.EqualFold(scheme, prefix) {
+			continue
+		}
+		return value, true
+	}
+	return "", false
+}
+
+func (s *Server) securityPersonalAccessToken(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
+	var t PersonalAccessToken
+	token, ok := findAuthorization(req.Header, "Bearer")
+	if !ok {
+		return ctx, false, nil
+	}
+	t.Token = token
+	rctx, err := s.sec.HandlePersonalAccessToken(ctx, operationName, t)
+	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+	return rctx, true, err
+}
+func (s *Server) securityUsernamePassword(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
+	var t UsernamePassword
+	if _, ok := findAuthorization(req.Header, "Basic"); !ok {
+		return ctx, false, nil
+	}
+	username, password, ok := req.BasicAuth()
+	if !ok {
+		return nil, false, errors.New("invalid basic auth")
+	}
+	t.Username = username
+	t.Password = password
+	rctx, err := s.sec.HandleUsernamePassword(ctx, operationName, t)
+	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+	return rctx, true, err
+}
 
 // SecuritySource is provider of security values (tokens, passwords, etc.).
 type SecuritySource interface {

@@ -92,8 +92,8 @@ func (s TeamStore) Create(ctx context.Context, t user.Team) error {
 		return err
 	}
 
-	query := "INSERT INTO teams (id, name) VALUES ($1, $2)"
-	if _, err := tx.Exec(ctx, query, t.ID, t.Name); err != nil {
+	query := "INSERT INTO teams (id, name, created_at) VALUES ($1, $2, $3)"
+	if _, err := tx.Exec(ctx, query, t.ID, t.Name, t.CreatedAt); err != nil {
 		_ = tx.Rollback(ctx)
 		return err
 	}
@@ -181,8 +181,8 @@ func (s TeamStore) AddTeamMember(ctx context.Context, m user.TeamMember) error {
 		return err
 	}
 
-	query := "INSERT INTO team_members (user_id, team_id, role) VALUES ($1, $2, $3)"
-	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, m.UserID, m.TeamID, m.Role)
+	query := "INSERT INTO team_members (user_id, team_id, role, created_at) VALUES ($1, $2, $3, $4)"
+	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, m.UserID, m.TeamID, m.Role, m.CreatedAt)
 	return err
 }
 

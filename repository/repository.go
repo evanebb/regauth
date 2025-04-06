@@ -8,11 +8,11 @@ import (
 )
 
 type Repository struct {
-	ID         uuid.UUID  `json:"id"`
-	Namespace  string     `json:"namespace"`
-	Name       Name       `json:"name"`
-	Visibility Visibility `json:"visibility"`
-	CreatedAt  time.Time  `json:"createdAt"`
+	ID         uuid.UUID
+	Namespace  string
+	Name       Name
+	Visibility Visibility
+	CreatedAt  time.Time
 }
 
 func (r Repository) IsValid() error {

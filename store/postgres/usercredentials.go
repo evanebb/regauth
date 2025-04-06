@@ -22,8 +22,12 @@ func (s UserCredentialsStore) GetByUserID(ctx context.Context, id uuid.UUID) (lo
 
 	query := "SELECT id, password_hash FROM users WHERE id = $1"
 	err := s.QuerierFromContext(ctx).QueryRow(ctx, query, id).Scan(&c.UserID, &c.PasswordHash)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return local.UserCredentials{}, local.ErrNoCredentials
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return local.UserCredentials{}, local.ErrNoCredentials
+		}
+
+		return local.UserCredentials{}, err
 	}
 
 	if len(c.PasswordHash) == 0 {

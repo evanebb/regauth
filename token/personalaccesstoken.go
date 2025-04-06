@@ -8,12 +8,12 @@ import (
 )
 
 type PersonalAccessToken struct {
-	ID             uuid.UUID   `json:"id"`
-	Description    Description `json:"description"`
-	Permission     Permission  `json:"permission"`
-	ExpirationDate time.Time   `json:"expirationDate"`
-	UserID         uuid.UUID   `json:"-"`
-	CreatedAt      time.Time   `json:"createdAt"`
+	ID             uuid.UUID
+	Description    Description
+	Permission     Permission
+	ExpirationDate time.Time
+	UserID         uuid.UUID
+	CreatedAt      time.Time
 }
 
 func (t PersonalAccessToken) IsValid() error {
