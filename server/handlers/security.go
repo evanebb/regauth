@@ -67,7 +67,7 @@ func (s SecurityHandler) HandleUsernamePassword(ctx context.Context, operationNa
 
 	credentials, err := s.credentialsStore.GetByUserID(ctx, u.ID)
 	if err != nil {
-		if errors.Is(err, user.ErrNotFound) {
+		if errors.Is(err, local.ErrNoCredentials) {
 			s.logger.DebugContext(ctx, "no credentials set for user", slog.String("username", t.GetUsername()))
 			return ctx, newErrorResponse(http.StatusUnauthorized, "authentication failed")
 		}
