@@ -22,102 +22,70 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
-	// AddTeamMember invokes addTeamMember operation.
-	//
-	// Add team member.
-	//
-	// POST /v1/teams/{name}/members
-	AddTeamMember(ctx context.Context, request *TeamMemberRequest, params AddTeamMemberParams) (*TeamMemberResponse, error)
-	// ChangeUserPassword invokes changeUserPassword operation.
-	//
-	// Change password for user.
-	//
-	// POST /v1/users/{username}/password
-	ChangeUserPassword(ctx context.Context, request *UserPasswordChangeRequest, params ChangeUserPasswordParams) error
-	// CreatePersonalAccessToken invokes createPersonalAccessToken operation.
-	//
-	// Create personal access token.
-	//
-	// POST /v1/tokens
-	CreatePersonalAccessToken(ctx context.Context, request *PersonalAccessTokenRequest) (*PersonalAccessTokenCreationResponse, error)
+	RepositoryInvoker
+	TeamInvoker
+	TokenInvoker
+	UserInvoker
+}
+
+// RepositoryInvoker invokes operations described by OpenAPI v3 specification.
+//
+// x-gen-operation-group: Repository
+type RepositoryInvoker interface {
 	// CreateRepository invokes createRepository operation.
 	//
 	// Create repository.
 	//
 	// POST /v1/repositories
 	CreateRepository(ctx context.Context, request *RepositoryRequest) (*RepositoryResponse, error)
-	// CreateTeam invokes createTeam operation.
-	//
-	// Create team.
-	//
-	// POST /v1/teams
-	CreateTeam(ctx context.Context, request *TeamRequest) (*TeamResponse, error)
-	// CreateUser invokes createUser operation.
-	//
-	// Create user.
-	//
-	// POST /v1/users
-	CreateUser(ctx context.Context, request *UserRequest) (*UserResponse, error)
-	// DeletePersonalAccessToken invokes deletePersonalAccessToken operation.
-	//
-	// Delete personal access token.
-	//
-	// DELETE /v1/tokens/{id}
-	DeletePersonalAccessToken(ctx context.Context, params DeletePersonalAccessTokenParams) error
 	// DeleteRepository invokes deleteRepository operation.
 	//
 	// Delete repository.
 	//
 	// DELETE /v1/repositories/{namespace}/{name}
 	DeleteRepository(ctx context.Context, params DeleteRepositoryParams) error
-	// DeleteTeam invokes deleteTeam operation.
-	//
-	// Delete team.
-	//
-	// DELETE /v1/teams/{name}
-	DeleteTeam(ctx context.Context, params DeleteTeamParams) error
-	// DeleteUser invokes deleteUser operation.
-	//
-	// Delete user.
-	//
-	// DELETE /v1/users/{username}
-	DeleteUser(ctx context.Context, params DeleteUserParams) error
-	// GetPersonalAccessToken invokes getPersonalAccessToken operation.
-	//
-	// Get personal access token.
-	//
-	// GET /v1/tokens/{id}
-	GetPersonalAccessToken(ctx context.Context, params GetPersonalAccessTokenParams) (*PersonalAccessTokenResponse, error)
 	// GetRepository invokes getRepository operation.
 	//
 	// Get repository.
 	//
 	// GET /v1/repositories/{namespace}/{name}
 	GetRepository(ctx context.Context, params GetRepositoryParams) (*RepositoryResponse, error)
-	// GetTeam invokes getTeam operation.
-	//
-	// Get team.
-	//
-	// GET /v1/teams/{name}
-	GetTeam(ctx context.Context, params GetTeamParams) (*TeamResponse, error)
-	// GetUser invokes getUser operation.
-	//
-	// Get user.
-	//
-	// GET /v1/users/{username}
-	GetUser(ctx context.Context, params GetUserParams) (*UserResponse, error)
-	// ListPersonalAccessTokens invokes listPersonalAccessTokens operation.
-	//
-	// List personal access tokens.
-	//
-	// GET /v1/tokens
-	ListPersonalAccessTokens(ctx context.Context) ([]PersonalAccessTokenResponse, error)
 	// ListRepositories invokes listRepositories operation.
 	//
 	// List repositories.
 	//
 	// GET /v1/repositories
 	ListRepositories(ctx context.Context) ([]RepositoryResponse, error)
+}
+
+// TeamInvoker invokes operations described by OpenAPI v3 specification.
+//
+// x-gen-operation-group: Team
+type TeamInvoker interface {
+	// AddTeamMember invokes addTeamMember operation.
+	//
+	// Add team member.
+	//
+	// POST /v1/teams/{name}/members
+	AddTeamMember(ctx context.Context, request *TeamMemberRequest, params AddTeamMemberParams) (*TeamMemberResponse, error)
+	// CreateTeam invokes createTeam operation.
+	//
+	// Create team.
+	//
+	// POST /v1/teams
+	CreateTeam(ctx context.Context, request *TeamRequest) (*TeamResponse, error)
+	// DeleteTeam invokes deleteTeam operation.
+	//
+	// Delete team.
+	//
+	// DELETE /v1/teams/{name}
+	DeleteTeam(ctx context.Context, params DeleteTeamParams) error
+	// GetTeam invokes getTeam operation.
+	//
+	// Get team.
+	//
+	// GET /v1/teams/{name}
+	GetTeam(ctx context.Context, params GetTeamParams) (*TeamResponse, error)
 	// ListTeamMembers invokes listTeamMembers operation.
 	//
 	// List team members.
@@ -130,12 +98,6 @@ type Invoker interface {
 	//
 	// GET /v1/teams
 	ListTeams(ctx context.Context) ([]TeamResponse, error)
-	// ListUsers invokes listUsers operation.
-	//
-	// List users.
-	//
-	// GET /v1/users
-	ListUsers(ctx context.Context) ([]UserResponse, error)
 	// RemoveTeamMember invokes removeTeamMember operation.
 	//
 	// Remove team member.
@@ -144,12 +106,86 @@ type Invoker interface {
 	RemoveTeamMember(ctx context.Context, params RemoveTeamMemberParams) error
 }
 
+// TokenInvoker invokes operations described by OpenAPI v3 specification.
+//
+// x-gen-operation-group: Token
+type TokenInvoker interface {
+	// CreatePersonalAccessToken invokes createPersonalAccessToken operation.
+	//
+	// Create personal access token.
+	//
+	// POST /v1/tokens
+	CreatePersonalAccessToken(ctx context.Context, request *PersonalAccessTokenRequest) (*PersonalAccessTokenCreationResponse, error)
+	// DeletePersonalAccessToken invokes deletePersonalAccessToken operation.
+	//
+	// Delete personal access token.
+	//
+	// DELETE /v1/tokens/{id}
+	DeletePersonalAccessToken(ctx context.Context, params DeletePersonalAccessTokenParams) error
+	// GetPersonalAccessToken invokes getPersonalAccessToken operation.
+	//
+	// Get personal access token.
+	//
+	// GET /v1/tokens/{id}
+	GetPersonalAccessToken(ctx context.Context, params GetPersonalAccessTokenParams) (*PersonalAccessTokenResponse, error)
+	// ListPersonalAccessTokens invokes listPersonalAccessTokens operation.
+	//
+	// List personal access tokens.
+	//
+	// GET /v1/tokens
+	ListPersonalAccessTokens(ctx context.Context) ([]PersonalAccessTokenResponse, error)
+}
+
+// UserInvoker invokes operations described by OpenAPI v3 specification.
+//
+// x-gen-operation-group: User
+type UserInvoker interface {
+	// ChangeUserPassword invokes changeUserPassword operation.
+	//
+	// Change password for user.
+	//
+	// POST /v1/users/{username}/password
+	ChangeUserPassword(ctx context.Context, request *UserPasswordChangeRequest, params ChangeUserPasswordParams) error
+	// CreateUser invokes createUser operation.
+	//
+	// Create user.
+	//
+	// POST /v1/users
+	CreateUser(ctx context.Context, request *UserRequest) (*UserResponse, error)
+	// DeleteUser invokes deleteUser operation.
+	//
+	// Delete user.
+	//
+	// DELETE /v1/users/{username}
+	DeleteUser(ctx context.Context, params DeleteUserParams) error
+	// GetUser invokes getUser operation.
+	//
+	// Get user.
+	//
+	// GET /v1/users/{username}
+	GetUser(ctx context.Context, params GetUserParams) (*UserResponse, error)
+	// ListUsers invokes listUsers operation.
+	//
+	// List users.
+	//
+	// GET /v1/users
+	ListUsers(ctx context.Context) ([]UserResponse, error)
+}
+
 // Client implements OAS client.
 type Client struct {
 	serverURL *url.URL
 	sec       SecuritySource
 	baseClient
 }
+type errorHandler interface {
+	NewError(ctx context.Context, err error) *ErrorStatusCode
+}
+
+var _ Handler = struct {
+	errorHandler
+	*Client
+}{}
 
 // NewClient initializes new Client defined by OAS.
 func NewClient(serverURL string, sec SecuritySource, opts ...ClientOption) (*Client, error) {

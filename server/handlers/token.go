@@ -4,170 +4,140 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
-	"github.com/evanebb/regauth/server/middleware"
-	"github.com/evanebb/regauth/server/response"
+	"github.com/evanebb/regauth/oas"
 	"github.com/evanebb/regauth/token"
-	"github.com/evanebb/regauth/util"
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
-type personalAccessTokenCtxKey struct{}
+type TokenHandler struct {
+	logger     *slog.Logger
+	tokenStore token.Store
+}
 
-func PersonalAccessTokenParser(l *slog.Logger, s token.Store) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			u, ok := middleware.AuthenticatedUserFromContext(r.Context())
-			if !ok {
-				l.ErrorContext(r.Context(), "could not parse user from request context")
-				response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
-				return
-			}
-
-			id, err := getUUIDFromRequest(r)
-			if err != nil {
-				response.WriteJSONError(w, http.StatusBadRequest, "invalid ID given")
-				return
-			}
-
-			pat, err := s.GetByID(r.Context(), id)
-			if err != nil {
-				if errors.Is(err, token.ErrNotFound) {
-					response.WriteJSONError(w, http.StatusNotFound, "personal access token not found")
-					return
-				}
-
-				l.ErrorContext(r.Context(), "could not get personal access token", slog.Any("error", err))
-				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-				return
-			}
-
-			if pat.UserID != u.ID {
-				response.WriteJSONError(w, http.StatusNotFound, "personal access token not found")
-				return
-			}
-
-			ctx := withPersonalAccessToken(r.Context(), pat)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-		return http.HandlerFunc(fn)
+func (h TokenHandler) CreatePersonalAccessToken(ctx context.Context, req *oas.PersonalAccessTokenRequest) (*oas.PersonalAccessTokenCreationResponse, error) {
+	u, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
 	}
-}
 
-// withPersonalAccessToken sets the given token.PersonalAccessToken in the context.
-// Use personalAccessTokenFromContext to retrieve the token.
-func withPersonalAccessToken(ctx context.Context, t token.PersonalAccessToken) context.Context {
-	return context.WithValue(ctx, personalAccessTokenCtxKey{}, t)
-}
-
-// personalAccessTokenFromContext parses the current token.PersonalAccessToken from the given request context.
-// This requires the token to have been previously set in the context, for example by the PersonalAccessTokenParser middleware.
-func personalAccessTokenFromContext(ctx context.Context) (token.PersonalAccessToken, bool) {
-	val, ok := ctx.Value(personalAccessTokenCtxKey{}).(token.PersonalAccessToken)
-	return val, ok
-}
-
-type tokenCreationResponse struct {
-	token.PersonalAccessToken
-	Token string `json:"token"`
-}
-
-func CreateToken(l *slog.Logger, s token.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusUnauthorized, "authenticated failed")
-			return
-		}
-
-		var pat token.PersonalAccessToken
-		if err := json.NewDecoder(r.Body).Decode(&pat); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body given")
-			return
-		}
-
-		var err error
-		pat.ID, err = uuid.NewV7()
-		if err != nil {
-			l.Error("could not generate UUID", "error", err)
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		pat.UserID = u.ID
-
-		if err := pat.IsValid(); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		randBytes := make([]byte, 42)
-		_, _ = rand.Read(randBytes)
-		plainTextToken := "registry_pat_" + base64.URLEncoding.EncodeToString(randBytes)
-
-		if err := s.Create(r.Context(), pat, plainTextToken); err != nil {
-			l.ErrorContext(r.Context(), "could not create personal access token", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		resp := tokenCreationResponse{PersonalAccessToken: pat, Token: plainTextToken}
-		response.WriteJSONResponse(w, http.StatusOK, resp)
+	id, err := uuid.NewV7()
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not generate UUID", "error", err)
+		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
 	}
-}
 
-func ListTokens(l *slog.Logger, s token.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := middleware.AuthenticatedUserFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
-			return
-		}
-
-		tokens, err := s.GetAllByUser(r.Context(), u.ID)
-		if err != nil {
-			l.ErrorContext(r.Context(), "could not get personal access tokens for user", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, util.NilSliceToEmpty(tokens))
+	pat := token.PersonalAccessToken{
+		ID:             id,
+		Description:    token.Description(req.Description),
+		Permission:     token.Permission(req.Permission),
+		ExpirationDate: req.ExpirationDate,
+		UserID:         u.ID,
+		CreatedAt:      time.Now(),
 	}
-}
 
-func GetToken(l *slog.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		pat, ok := personalAccessTokenFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse personal access token from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, pat)
+	if err := pat.IsValid(); err != nil {
+		return nil, newErrorResponse(http.StatusBadRequest, err.Error())
 	}
+
+	randBytes := make([]byte, 42)
+	_, _ = rand.Read(randBytes)
+	plainTextToken := "registry_pat_" + base64.URLEncoding.EncodeToString(randBytes)
+
+	if err := h.tokenStore.Create(ctx, pat, plainTextToken); err != nil {
+		h.logger.ErrorContext(ctx, "could not create personal access token", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	return &oas.PersonalAccessTokenCreationResponse{
+		ID:             pat.ID,
+		Description:    string(pat.Description),
+		Permission:     oas.PersonalAccessTokenCreationResponsePermission(pat.Permission),
+		ExpirationDate: pat.ExpirationDate,
+		Token:          plainTextToken,
+		CreatedAt:      time.Now(),
+	}, nil
 }
 
-func DeleteToken(l *slog.Logger, s token.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		pat, ok := personalAccessTokenFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse personal access token from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
+func (h TokenHandler) ListPersonalAccessTokens(ctx context.Context) ([]oas.PersonalAccessTokenResponse, error) {
+	u, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return nil, newInternalServerErrorResponse()
+	}
+
+	tokens, err := h.tokenStore.GetAllByUser(ctx, u.ID)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not get personal access tokens for user", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	resp := make([]oas.PersonalAccessTokenResponse, len(tokens))
+	for i := 0; i < len(tokens); i++ {
+		resp[i] = mapPersonalAccessTokenResponse(tokens[i])
+	}
+
+	return resp, nil
+}
+
+func (h TokenHandler) GetPersonalAccessToken(ctx context.Context, params oas.GetPersonalAccessTokenParams) (*oas.PersonalAccessTokenResponse, error) {
+	pat, err := h.getPersonalAccessTokenFromRequest(ctx, params.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := mapPersonalAccessTokenResponse(pat)
+	return &resp, nil
+}
+
+func (h TokenHandler) DeletePersonalAccessToken(ctx context.Context, params oas.DeletePersonalAccessTokenParams) error {
+	pat, err := h.getPersonalAccessTokenFromRequest(ctx, params.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := h.tokenStore.DeleteByID(ctx, pat.ID); err != nil {
+		h.logger.ErrorContext(ctx, "could not delete personal access token", slog.Any("error", err))
+		return newInternalServerErrorResponse()
+	}
+
+	return nil
+}
+
+func (h TokenHandler) getPersonalAccessTokenFromRequest(ctx context.Context, id uuid.UUID) (token.PersonalAccessToken, error) {
+	u, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return token.PersonalAccessToken{}, newInternalServerErrorResponse()
+	}
+
+	pat, err := h.tokenStore.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, token.ErrNotFound) {
+			return token.PersonalAccessToken{}, newErrorResponse(http.StatusNotFound, "personal access token not found")
 		}
 
-		if err := s.DeleteByID(r.Context(), pat.ID); err != nil {
-			l.ErrorContext(r.Context(), "could not delete personal access token", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
+		h.logger.ErrorContext(ctx, "could not get personal access token", slog.Any("error", err))
+		return token.PersonalAccessToken{}, newInternalServerErrorResponse()
+	}
 
-		w.WriteHeader(http.StatusNoContent)
+	if pat.UserID != u.ID {
+		return token.PersonalAccessToken{}, newErrorResponse(http.StatusNotFound, "personal access token not found")
+	}
+
+	return pat, nil
+}
+
+func mapPersonalAccessTokenResponse(t token.PersonalAccessToken) oas.PersonalAccessTokenResponse {
+	return oas.PersonalAccessTokenResponse{
+		ID:             t.ID,
+		Description:    string(t.Description),
+		Permission:     oas.PersonalAccessTokenResponsePermission(t.Permission),
+		ExpirationDate: t.ExpirationDate,
+		CreatedAt:      t.CreatedAt,
 	}
 }

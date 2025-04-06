@@ -2,219 +2,177 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/evanebb/regauth/auth/local"
-	"github.com/evanebb/regauth/server/middleware"
-	"github.com/evanebb/regauth/server/response"
+	"github.com/evanebb/regauth/oas"
 	"github.com/evanebb/regauth/user"
-	"github.com/evanebb/regauth/util"
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
-type userCtxKey struct{}
+type UserHandler struct {
+	logger           *slog.Logger
+	userStore        user.Store
+	credentialsStore local.UserCredentialsStore
+}
 
-func RequireRole(l *slog.Logger, role user.Role) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			u, ok := middleware.AuthenticatedUserFromContext(r.Context())
-			if !ok {
-				l.ErrorContext(r.Context(), "could not parse user from request context")
-				response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
-				return
-			}
-
-			if u.Role != role {
-				response.WriteJSONError(w, http.StatusForbidden, "insufficient permission")
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		}
-		return http.HandlerFunc(fn)
+func (h UserHandler) CreateUser(ctx context.Context, req *oas.UserRequest) (*oas.UserResponse, error) {
+	if err := h.requireRole(ctx, user.RoleAdmin); err != nil {
+		return nil, err
 	}
-}
 
-func UserParser(l *slog.Logger, s user.Store) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			username := chi.URLParam(r, "username")
-			if username == "" {
-				response.WriteJSONError(w, http.StatusBadRequest, "no username given")
-				return
-			}
-
-			u, err := s.GetByUsername(r.Context(), username)
-			if err != nil {
-				if errors.Is(err, user.ErrNotFound) {
-					response.WriteJSONError(w, http.StatusNotFound, "user not found")
-					return
-				}
-
-				l.ErrorContext(r.Context(), "could not get user", slog.Any("error", err))
-				response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-				return
-			}
-
-			ctx := withUser(r.Context(), u)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-		return http.HandlerFunc(fn)
+	id, err := uuid.NewV7()
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not generate UUID", "error", err)
+		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
 	}
-}
 
-// withUser sets the given user.User in the context.
-// Use userFromContext to retrieve the user.
-func withUser(ctx context.Context, u user.User) context.Context {
-	return context.WithValue(ctx, userCtxKey{}, u)
-}
-
-// userFromContext parses the current user.User from the given request context.
-// This requires the user to have been previously set in the context, for example by the UserParser middleware.
-func userFromContext(ctx context.Context) (user.User, bool) {
-	val, ok := ctx.Value(userCtxKey{}).(user.User)
-	return val, ok
-}
-
-func CreateUser(l *slog.Logger, s user.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var newUser user.User
-		if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body given")
-			return
-		}
-
-		_, err := s.GetByUsername(r.Context(), string(newUser.Username))
-		if err == nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "user already exists")
-			return
-		}
-
-		if !errors.Is(err, user.ErrNotFound) {
-			l.ErrorContext(r.Context(), "could not get user", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		newUser.ID, err = uuid.NewV7()
-		if err != nil {
-			l.Error("could not generate UUID", "error", err)
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		if err := newUser.IsValid(); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		if err := s.Create(r.Context(), newUser); err != nil {
-			l.Error("could not create user", "error", err)
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, newUser)
+	newUser := user.User{
+		ID:        id,
+		Username:  user.Username(req.Username),
+		Role:      user.Role(req.Role),
+		CreatedAt: time.Now(),
 	}
-}
 
-func ListUsers(l *slog.Logger, s user.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		users, err := s.GetAll(r.Context())
-		if err != nil {
-			l.ErrorContext(r.Context(), "could not get users", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, util.NilSliceToEmpty(users))
+	if err := newUser.IsValid(); err != nil {
+		return nil, newErrorResponse(http.StatusBadRequest, err.Error())
 	}
-}
 
-func GetUser(l *slog.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		u, ok := userFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		response.WriteJSONResponse(w, http.StatusOK, u)
+	_, err = h.userStore.GetByUsername(ctx, req.Username)
+	if err == nil {
+		return nil, newErrorResponse(http.StatusBadRequest, "user already exists")
 	}
-}
 
-func DeleteUser(l *slog.Logger, s user.Store) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		currentUser, ok := middleware.AuthenticatedUserFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse authenticated user from request context")
-			response.WriteJSONError(w, http.StatusUnauthorized, "authentication failed")
-			return
-		}
-
-		u, ok := userFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		if currentUser.ID == u.ID {
-			response.WriteJSONError(w, http.StatusBadRequest, "cannot delete current user")
-			return
-		}
-
-		if err := s.DeleteByID(r.Context(), u.ID); err != nil {
-			l.ErrorContext(r.Context(), "could not delete user", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+	if !errors.Is(err, user.ErrNotFound) {
+		h.logger.ErrorContext(ctx, "could not get user", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
 	}
+
+	if err := h.userStore.Create(ctx, newUser); err != nil {
+		h.logger.ErrorContext(ctx, "could not create user", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	resp := mapUserResponse(newUser)
+	return &resp, nil
 }
 
-type userPasswordChangeRequest struct {
-	Password string `json:"password"`
+func (h UserHandler) ListUsers(ctx context.Context) ([]oas.UserResponse, error) {
+	if err := h.requireRole(ctx, user.RoleAdmin); err != nil {
+		return nil, err
+	}
+
+	users, err := h.userStore.GetAll(ctx)
+	if err != nil {
+		h.logger.ErrorContext(ctx, "could not get users", slog.Any("error", err))
+		return nil, newInternalServerErrorResponse()
+	}
+
+	resp := make([]oas.UserResponse, len(users))
+	for i := 0; i < len(users); i++ {
+		resp[i] = mapUserResponse(users[i])
+	}
+
+	return resp, nil
 }
 
-func ChangeUserPassword(l *slog.Logger, s local.UserCredentialsStore) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req userPasswordChangeRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			response.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body given")
-			return
+func (h UserHandler) GetUser(ctx context.Context, params oas.GetUserParams) (*oas.UserResponse, error) {
+	if err := h.requireRole(ctx, user.RoleAdmin); err != nil {
+		return nil, err
+	}
+
+	u, err := h.getUserFromRequest(ctx, params.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := mapUserResponse(u)
+	return &resp, nil
+}
+
+func (h UserHandler) DeleteUser(ctx context.Context, params oas.DeleteUserParams) error {
+	currentUser, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return newInternalServerErrorResponse()
+	}
+
+	u, err := h.getUserFromRequest(ctx, params.Username)
+	if err != nil {
+		return err
+	}
+
+	if currentUser.ID == u.ID {
+		return newErrorResponse(http.StatusBadRequest, "cannot delete current user")
+	}
+
+	if err := h.userStore.DeleteByID(ctx, u.ID); err != nil {
+		h.logger.ErrorContext(ctx, "could not delete user", slog.Any("error", err))
+		return newInternalServerErrorResponse()
+	}
+
+	return nil
+}
+
+func (h UserHandler) ChangeUserPassword(ctx context.Context, req *oas.UserPasswordChangeRequest, params oas.ChangeUserPasswordParams) error {
+	u, err := h.getUserFromRequest(ctx, params.Username)
+	if err != nil {
+		return err
+	}
+
+	credentials := local.UserCredentials{UserID: u.ID}
+	if err := credentials.SetPassword(req.Password); err != nil {
+		if errors.Is(err, local.ErrWeakPassword) {
+			return newErrorResponse(http.StatusBadRequest, err.Error())
 		}
 
-		u, ok := userFromContext(r.Context())
-		if !ok {
-			l.ErrorContext(r.Context(), "could not parse user from request context")
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
+		h.logger.ErrorContext(ctx, "could not set password", slog.Any("error", err))
+		return newInternalServerErrorResponse()
+	}
+
+	if err := h.credentialsStore.Save(ctx, credentials); err != nil {
+		h.logger.ErrorContext(ctx, "could not update user credentials", slog.Any("error", err))
+		return newInternalServerErrorResponse()
+	}
+
+	return nil
+}
+
+func (h UserHandler) getUserFromRequest(ctx context.Context, username string) (user.User, error) {
+	u, err := h.userStore.GetByUsername(ctx, username)
+	if err != nil {
+		if errors.Is(err, user.ErrNotFound) {
+			return user.User{}, newErrorResponse(http.StatusNotFound, "user not found")
 		}
 
-		credentials := local.UserCredentials{UserID: u.ID}
-		if err := credentials.SetPassword(req.Password); err != nil {
-			if errors.Is(err, local.ErrWeakPassword) {
-				response.WriteJSONError(w, http.StatusBadRequest, err.Error())
-				return
-			}
+		h.logger.ErrorContext(ctx, "could not get user", slog.Any("error", err))
+		return user.User{}, newInternalServerErrorResponse()
+	}
 
-			l.ErrorContext(r.Context(), "could not set password", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
+	return u, nil
+}
 
-		if err := s.Save(r.Context(), credentials); err != nil {
-			l.ErrorContext(r.Context(), "could not update user credentials", slog.Any("error", err))
-			response.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
-			return
-		}
+func (h UserHandler) requireRole(ctx context.Context, role user.Role) error {
+	u, ok := AuthenticatedUserFromContext(ctx)
+	if !ok {
+		h.logger.ErrorContext(ctx, "could not parse user from request context")
+		return newInternalServerErrorResponse()
+	}
 
-		w.WriteHeader(http.StatusNoContent)
+	if u.Role != role {
+		return newErrorResponse(http.StatusForbidden, "insufficient permission")
+	}
+
+	return nil
+}
+
+func mapUserResponse(u user.User) oas.UserResponse {
+	return oas.UserResponse{
+		ID:        u.ID,
+		Username:  string(u.Username),
+		Role:      oas.UserResponseRole(u.Role),
+		CreatedAt: u.CreatedAt,
 	}
 }

@@ -112,8 +112,8 @@ func (s PersonalAccessTokenStore) Create(ctx context.Context, t token.PersonalAc
 	lastEight := plainTextToken[len(plainTextToken)-8:]
 	hash := auth.HashTokenWithRandomSalt(plainTextToken)
 
-	query := "INSERT INTO personal_access_tokens (id, hash, last_eight ,description, permission, expiration_date, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7)"
-	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, t.ID, hash, lastEight, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID)
+	query := "INSERT INTO personal_access_tokens (id, hash, last_eight ,description, permission, expiration_date, user_id, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+	_, err = s.QuerierFromContext(ctx).Exec(ctx, query, t.ID, hash, lastEight, t.Description, permissionToDatabaseMap[t.Permission], t.ExpirationDate, t.UserID, t.CreatedAt)
 	return err
 }
 
