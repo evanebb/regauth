@@ -18,7 +18,6 @@ type RepositoryHandler struct {
 	logger    *slog.Logger
 	repoStore repository.Store
 	teamStore user.TeamStore
-	oas.UnimplementedHandler
 }
 
 func (h RepositoryHandler) CreateRepository(ctx context.Context, req *oas.RepositoryRequest) (*oas.RepositoryResponse, error) {
