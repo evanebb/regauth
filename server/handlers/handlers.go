@@ -59,7 +59,16 @@ func NewHandler(
 }
 
 func (h Handler) NewError(ctx context.Context, err error) *oas.ErrorStatusCode {
+	var (
+		errorStatusCode *oas.ErrorStatusCode
+	)
+
 	switch {
+	case errors.As(err, &errorStatusCode):
+		// if this is already a status code error, just pass it through
+		// this should really only happen with errors returned from the SecurityHandler, since ogen will not check if
+		// those are *oas.ErrorStatusCode instances
+		return errorStatusCode
 	case errors.Is(err, ogenerrors.ErrSecurityRequirementIsNotSatisfied):
 		// no credentials given
 		return newErrorResponse(http.StatusUnauthorized, "authentication failed")
