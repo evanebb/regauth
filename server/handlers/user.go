@@ -55,7 +55,7 @@ func (h UserHandler) CreateUser(ctx context.Context, req *oas.UserRequest) (*oas
 		return nil, newInternalServerErrorResponse()
 	}
 
-	resp := mapUserResponse(newUser)
+	resp := convertToUserResponse(newUser)
 	return &resp, nil
 }
 
@@ -70,12 +70,7 @@ func (h UserHandler) ListUsers(ctx context.Context) ([]oas.UserResponse, error) 
 		return nil, newInternalServerErrorResponse()
 	}
 
-	resp := make([]oas.UserResponse, len(users))
-	for i := 0; i < len(users); i++ {
-		resp[i] = mapUserResponse(users[i])
-	}
-
-	return resp, nil
+	return convertSlice(users, convertToUserResponse), nil
 }
 
 func (h UserHandler) GetUser(ctx context.Context, params oas.GetUserParams) (*oas.UserResponse, error) {
@@ -88,7 +83,7 @@ func (h UserHandler) GetUser(ctx context.Context, params oas.GetUserParams) (*oa
 		return nil, err
 	}
 
-	resp := mapUserResponse(u)
+	resp := convertToUserResponse(u)
 	return &resp, nil
 }
 
@@ -168,7 +163,7 @@ func (h UserHandler) requireRole(ctx context.Context, role user.Role) error {
 	return nil
 }
 
-func mapUserResponse(u user.User) oas.UserResponse {
+func convertToUserResponse(u user.User) oas.UserResponse {
 	return oas.UserResponse{
 		ID:        u.ID,
 		Username:  string(u.Username),

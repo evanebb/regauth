@@ -76,12 +76,7 @@ func (h TokenHandler) ListPersonalAccessTokens(ctx context.Context) ([]oas.Perso
 		return nil, newInternalServerErrorResponse()
 	}
 
-	resp := make([]oas.PersonalAccessTokenResponse, len(tokens))
-	for i := 0; i < len(tokens); i++ {
-		resp[i] = mapPersonalAccessTokenResponse(tokens[i])
-	}
-
-	return resp, nil
+	return convertSlice(tokens, convertToPersonalAccessTokenResponse), nil
 }
 
 func (h TokenHandler) GetPersonalAccessToken(ctx context.Context, params oas.GetPersonalAccessTokenParams) (*oas.PersonalAccessTokenResponse, error) {
@@ -90,7 +85,7 @@ func (h TokenHandler) GetPersonalAccessToken(ctx context.Context, params oas.Get
 		return nil, err
 	}
 
-	resp := mapPersonalAccessTokenResponse(pat)
+	resp := convertToPersonalAccessTokenResponse(pat)
 	return &resp, nil
 }
 
@@ -132,7 +127,7 @@ func (h TokenHandler) getPersonalAccessTokenFromRequest(ctx context.Context, id 
 	return pat, nil
 }
 
-func mapPersonalAccessTokenResponse(t token.PersonalAccessToken) oas.PersonalAccessTokenResponse {
+func convertToPersonalAccessTokenResponse(t token.PersonalAccessToken) oas.PersonalAccessTokenResponse {
 	return oas.PersonalAccessTokenResponse{
 		ID:             t.ID,
 		Description:    string(t.Description),

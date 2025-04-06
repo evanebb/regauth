@@ -80,7 +80,7 @@ func (h TeamHandler) CreateTeam(ctx context.Context, req *oas.TeamRequest) (*oas
 		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
 	}
 
-	resp := mapTeamResponse(team)
+	resp := convertToTeamResponse(team)
 	return &resp, nil
 }
 
@@ -97,12 +97,7 @@ func (h TeamHandler) ListTeams(ctx context.Context) ([]oas.TeamResponse, error) 
 		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
 	}
 
-	resp := make([]oas.TeamResponse, len(teams))
-	for i := 0; i < len(teams); i++ {
-		resp[i] = mapTeamResponse(teams[i])
-	}
-
-	return resp, nil
+	return convertSlice(teams, convertToTeamResponse), nil
 }
 
 func (h TeamHandler) GetTeam(ctx context.Context, params oas.GetTeamParams) (*oas.TeamResponse, error) {
@@ -111,7 +106,7 @@ func (h TeamHandler) GetTeam(ctx context.Context, params oas.GetTeamParams) (*oa
 		return nil, err
 	}
 
-	resp := mapTeamResponse(team)
+	resp := convertToTeamResponse(team)
 	return &resp, nil
 }
 
@@ -170,7 +165,7 @@ func (h TeamHandler) AddTeamMember(ctx context.Context, req *oas.TeamMemberReque
 		return nil, newInternalServerErrorResponse()
 	}
 
-	resp := mapTeamMemberResponse(newMember)
+	resp := convertToTeamMemberResponse(newMember)
 	return &resp, nil
 }
 
@@ -186,12 +181,7 @@ func (h TeamHandler) ListTeamMembers(ctx context.Context, params oas.ListTeamMem
 		return nil, newInternalServerErrorResponse()
 	}
 
-	resp := make([]oas.TeamMemberResponse, len(members))
-	for i := 0; i < len(members); i++ {
-		resp[i] = mapTeamMemberResponse(members[i])
-	}
-
-	return resp, nil
+	return convertSlice(members, convertToTeamMemberResponse), nil
 }
 
 func (h TeamHandler) RemoveTeamMember(ctx context.Context, params oas.RemoveTeamMemberParams) error {
@@ -261,7 +251,7 @@ func (h TeamHandler) getTeamAndCurrentMemberFromRequest(ctx context.Context, nam
 	return team, member, nil
 }
 
-func mapTeamResponse(t user.Team) oas.TeamResponse {
+func convertToTeamResponse(t user.Team) oas.TeamResponse {
 	return oas.TeamResponse{
 		ID:        t.ID,
 		Name:      string(t.Name),
@@ -269,7 +259,7 @@ func mapTeamResponse(t user.Team) oas.TeamResponse {
 	}
 }
 
-func mapTeamMemberResponse(tm user.TeamMember) oas.TeamMemberResponse {
+func convertToTeamMemberResponse(tm user.TeamMember) oas.TeamMemberResponse {
 	return oas.TeamMemberResponse{
 		UserId:    tm.UserID,
 		Username:  string(tm.Username),

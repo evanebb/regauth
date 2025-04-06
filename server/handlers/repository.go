@@ -61,7 +61,7 @@ func (h RepositoryHandler) CreateRepository(ctx context.Context, req *oas.Reposi
 		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
 	}
 
-	resp := mapRepositoryResponse(repo)
+	resp := convertToRepositoryResponse(repo)
 	return &resp, nil
 }
 
@@ -84,12 +84,7 @@ func (h RepositoryHandler) ListRepositories(ctx context.Context) ([]oas.Reposito
 		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
 	}
 
-	resp := make([]oas.RepositoryResponse, len(repos))
-	for i := 0; i < len(repos); i++ {
-		resp[i] = mapRepositoryResponse(repos[i])
-	}
-
-	return resp, nil
+	return convertSlice(repos, convertToRepositoryResponse), nil
 }
 
 func (h RepositoryHandler) GetRepository(ctx context.Context, params oas.GetRepositoryParams) (*oas.RepositoryResponse, error) {
@@ -98,7 +93,7 @@ func (h RepositoryHandler) GetRepository(ctx context.Context, params oas.GetRepo
 		return nil, err
 	}
 
-	resp := mapRepositoryResponse(repo)
+	resp := convertToRepositoryResponse(repo)
 	return &resp, nil
 }
 
@@ -166,7 +161,7 @@ func (h RepositoryHandler) getRepositoryFromRequest(ctx context.Context, namespa
 	return repo, nil
 }
 
-func mapRepositoryResponse(r repository.Repository) oas.RepositoryResponse {
+func convertToRepositoryResponse(r repository.Repository) oas.RepositoryResponse {
 	return oas.RepositoryResponse{
 		ID:         r.ID,
 		Namespace:  r.Namespace,
