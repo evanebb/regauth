@@ -25,13 +25,13 @@ func (h RepositoryHandler) CreateRepository(ctx context.Context, req *oas.Reposi
 	u, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	authorizedNamespaces, err := h.getUserNamespaces(ctx, u)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "failed to get namespaces for user", slog.Any("error", err))
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	if !slices.Contains(authorizedNamespaces, req.Namespace) {
@@ -41,7 +41,7 @@ func (h RepositoryHandler) CreateRepository(ctx context.Context, req *oas.Reposi
 	id, err := uuid.NewV7()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "could not generate UUID", "error", err)
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	repo := repository.Repository{
@@ -58,7 +58,7 @@ func (h RepositoryHandler) CreateRepository(ctx context.Context, req *oas.Reposi
 
 	if err := h.repoStore.Create(ctx, repo); err != nil {
 		h.logger.ErrorContext(ctx, "could not create repository", "error", err)
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	resp := convertToRepositoryResponse(repo)
@@ -69,19 +69,19 @@ func (h RepositoryHandler) ListRepositories(ctx context.Context) ([]oas.Reposito
 	u, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	namespaces, err := h.getUserNamespaces(ctx, u)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "failed to get namespaces for user", slog.Any("error", err))
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	repos, err := h.repoStore.GetAllByNamespace(ctx, namespaces...)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "failed to get repositories for user", slog.Any("error", err))
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	return convertSlice(repos, convertToRepositoryResponse), nil
@@ -105,7 +105,7 @@ func (h RepositoryHandler) DeleteRepository(ctx context.Context, params oas.Dele
 
 	if err := h.repoStore.DeleteByID(ctx, repo.ID); err != nil {
 		h.logger.ErrorContext(ctx, "could not delete repository", slog.Any("error", err))
-		return newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return newInternalServerErrorResponse()
 	}
 
 	return nil
@@ -132,13 +132,13 @@ func (h RepositoryHandler) getRepositoryFromRequest(ctx context.Context, namespa
 	u, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
-		return repository.Repository{}, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return repository.Repository{}, newInternalServerErrorResponse()
 	}
 
 	authorizedNamespaces, err := h.getUserNamespaces(ctx, u)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "failed to get namespaces for user", slog.Any("error", err))
-		return repository.Repository{}, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return repository.Repository{}, newInternalServerErrorResponse()
 	}
 
 	if !slices.Contains(authorizedNamespaces, namespace) {
@@ -155,7 +155,7 @@ func (h RepositoryHandler) getRepositoryFromRequest(ctx context.Context, namespa
 			slog.Any("error", err),
 			slog.String("namespace", namespace),
 			slog.String("name", name))
-		return repository.Repository{}, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return repository.Repository{}, newInternalServerErrorResponse()
 	}
 
 	return repo, nil

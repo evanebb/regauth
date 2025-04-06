@@ -41,12 +41,12 @@ func (s SecurityHandler) HandlePersonalAccessToken(ctx context.Context, operatio
 		}
 
 		s.logger.ErrorContext(ctx, "could not get personal access token", slog.Any("error", err))
-		return ctx, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return ctx, newInternalServerErrorResponse()
 	}
 
 	u, err := s.userStore.GetByID(ctx, tok.UserID)
 	if err != nil {
-		return ctx, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return ctx, newInternalServerErrorResponse()
 	}
 
 	s.logger.DebugContext(ctx, "token authentication successful")
@@ -62,7 +62,7 @@ func (s SecurityHandler) HandleUsernamePassword(ctx context.Context, operationNa
 		}
 
 		s.logger.ErrorContext(ctx, "could not get user", slog.Any("error", err))
-		return ctx, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return ctx, newInternalServerErrorResponse()
 	}
 
 	credentials, err := s.credentialsStore.GetByUserID(ctx, u.ID)
@@ -73,7 +73,7 @@ func (s SecurityHandler) HandleUsernamePassword(ctx context.Context, operationNa
 		}
 
 		s.logger.ErrorContext(ctx, "could not get credentials", slog.Any("error", err))
-		return ctx, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return ctx, newInternalServerErrorResponse()
 	}
 
 	if err := credentials.CheckPassword(t.GetPassword()); err != nil {

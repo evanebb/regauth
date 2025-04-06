@@ -26,7 +26,7 @@ func (h UserHandler) CreateUser(ctx context.Context, req *oas.UserRequest) (*oas
 	id, err := uuid.NewV7()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "could not generate UUID", "error", err)
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	newUser := user.User{

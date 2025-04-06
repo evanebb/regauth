@@ -22,13 +22,13 @@ func (h TokenHandler) CreatePersonalAccessToken(ctx context.Context, req *oas.Pe
 	u, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	id, err := uuid.NewV7()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "could not generate UUID", "error", err)
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	pat := token.PersonalAccessToken{

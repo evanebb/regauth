@@ -21,7 +21,7 @@ func (h TeamHandler) CreateTeam(ctx context.Context, req *oas.TeamRequest) (*oas
 	u, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	_, err := h.teamStore.GetByName(ctx, req.Name)
@@ -31,13 +31,13 @@ func (h TeamHandler) CreateTeam(ctx context.Context, req *oas.TeamRequest) (*oas
 
 	if !errors.Is(err, user.ErrTeamNotFound) {
 		h.logger.ErrorContext(ctx, "could not get team", slog.Any("error", err))
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	id, err := uuid.NewV7()
 	if err != nil {
 		h.logger.ErrorContext(ctx, "could not generate UUID", "error", err)
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	team := user.Team{
@@ -77,7 +77,7 @@ func (h TeamHandler) CreateTeam(ctx context.Context, req *oas.TeamRequest) (*oas
 
 	if err != nil {
 		h.logger.ErrorContext(ctx, "could not create team", slog.Any("error", err))
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	resp := convertToTeamResponse(team)
@@ -88,13 +88,13 @@ func (h TeamHandler) ListTeams(ctx context.Context) ([]oas.TeamResponse, error) 
 	u, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	teams, err := h.teamStore.GetAllByUser(ctx, u.ID)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "could not get teams for user", slog.Any("error", err))
-		return nil, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return nil, newInternalServerErrorResponse()
 	}
 
 	return convertSlice(teams, convertToTeamResponse), nil
@@ -220,7 +220,7 @@ func (h TeamHandler) getTeamAndCurrentMemberFromRequest(ctx context.Context, nam
 	u, ok := AuthenticatedUserFromContext(ctx)
 	if !ok {
 		h.logger.ErrorContext(ctx, "could not parse user from request context")
-		return user.Team{}, user.TeamMember{}, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return user.Team{}, user.TeamMember{}, newInternalServerErrorResponse()
 	}
 
 	team, err := h.teamStore.GetByName(ctx, name)
@@ -232,7 +232,7 @@ func (h TeamHandler) getTeamAndCurrentMemberFromRequest(ctx context.Context, nam
 		h.logger.ErrorContext(ctx, "could not get team",
 			slog.Any("error", err),
 			slog.String("name", name))
-		return user.Team{}, user.TeamMember{}, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return user.Team{}, user.TeamMember{}, newInternalServerErrorResponse()
 	}
 
 	member, err := h.teamStore.GetTeamMember(ctx, team.ID, u.ID)
@@ -245,7 +245,7 @@ func (h TeamHandler) getTeamAndCurrentMemberFromRequest(ctx context.Context, nam
 			slog.Any("error", err),
 			slog.String("team", name),
 			slog.String("user", string(u.Username)))
-		return user.Team{}, user.TeamMember{}, newErrorResponse(http.StatusInternalServerError, "internal server error")
+		return user.Team{}, user.TeamMember{}, newInternalServerErrorResponse()
 	}
 
 	return team, member, nil

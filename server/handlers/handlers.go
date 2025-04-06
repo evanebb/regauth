@@ -67,5 +67,5 @@ func (h Handler) NewError(ctx context.Context, err error) *oas.ErrorStatusCode {
 
 	// log the error and return a generic internal server error by default, to avoid potentially leaking sensitive info
 	h.logger.ErrorContext(ctx, "unhandled error occurred: "+err.Error(), slog.Any("error", err))
-	return newErrorResponse(http.StatusInternalServerError, "internal server error")
+	return newInternalServerErrorResponse()
 }
