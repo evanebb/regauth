@@ -4,7 +4,7 @@ initialadmin:
 
 log:
   level: debug
-  format: text
+  formatter: text
 
 database:
   host: localhost
