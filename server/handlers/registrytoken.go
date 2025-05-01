@@ -100,7 +100,7 @@ func GenerateRegistryToken(
 		_ = certChain.AddString(base64.StdEncoding.EncodeToString(tokenConfig.SigningCert.Raw))
 
 		headers := jws.NewHeaders()
-		if err = headers.Set(jws.X509CertChainKey, &certChain); err != nil {
+		if err := headers.Set(jws.X509CertChainKey, &certChain); err != nil {
 			l.Error("unknown error occurred when setting x5c header", "error", err)
 			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 			return
