@@ -34,7 +34,7 @@ func buildConfiguration(args []string) (*configuration.Configuration, error) {
 
 	configurationFile := args[0]
 
-	v := viper.New()
+	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 	v.SetEnvPrefix("regauth")
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

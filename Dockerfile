@@ -3,7 +3,7 @@ FROM golang:1.24.0-alpine AS build
 WORKDIR /app
 COPY . .
 RUN go mod download
-RUN CGO_ENABLED=0 go build -tags viper_bind_struct -o ./bin/regauth ./cmd/regauth
+RUN CGO_ENABLED=0 go build -o ./bin/regauth ./cmd/regauth
 
 FROM scratch
 
