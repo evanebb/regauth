@@ -38,5 +38,4 @@ token:
 
 pat:
   # Custom prefix for personal access tokens. Defaults to 'registry_pat'. Tokens follow the format '<prefix><random_chars>'.
-  # This should not be changed for an existing instance, since doing so will break tokens with the old prefix.
   prefix: "registry_pat_"

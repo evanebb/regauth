@@ -29,27 +29,6 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid personal access token", func(t *testing.T) {
-		t.Parallel()
-		tokenStore := memory.NewPersonalAccessTokenStore()
-		userStore := memory.NewUserStore()
-		a := NewAuthenticator(tokenStore, userStore, "registry_pat_")
-
-		u := user.User{
-			ID:       uuid.New(),
-			Username: "user",
-			Role:     user.RoleAdmin,
-		}
-		if err := userStore.Create(t.Context(), u); err != nil {
-			t.Fatalf("failed to create user: %q", err)
-		}
-
-		_, _, err := a.Authenticate(t.Context(), "user", "invalid", sourceIP)
-		if !errors.Is(err, ErrAuthenticationFailed) || !strings.Contains(err.Error(), "invalid personal access token given") {
-			t.Fatalf("expected %q, got %q", ErrAuthenticationFailed, err)
-		}
-	})
-
 	t.Run("personal access token does not exist", func(t *testing.T) {
 		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()

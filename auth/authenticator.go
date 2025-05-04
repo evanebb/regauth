@@ -6,7 +6,6 @@ import (
 	"github.com/evanebb/regauth/token"
 	"github.com/evanebb/regauth/user"
 	"net"
-	"strings"
 	"time"
 )
 
@@ -31,10 +30,6 @@ func (a authenticator) Authenticate(ctx context.Context, username, password stri
 	u, err := a.userStore.GetByUsername(ctx, username)
 	if err != nil {
 		return p, u, errors.Join(ErrAuthenticationFailed, err)
-	}
-
-	if !strings.HasPrefix(password, a.tokenPrefix) {
-		return p, u, errors.Join(ErrAuthenticationFailed, errors.New("invalid personal access token given"))
 	}
 
 	p, err = a.tokenStore.GetByPlainTextToken(ctx, password)
