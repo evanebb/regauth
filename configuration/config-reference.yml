@@ -35,3 +35,8 @@ token:
   certificate: /path/to/certificate.pem
   key: /path/to/key.pem
   alg: RS256
+
+pat:
+  # Custom prefix for personal access tokens. Defaults to 'registry_pat'. Tokens follow the format '<prefix><random_chars>'.
+  # This should not be changed for an existing instance, since doing so will break tokens with the old prefix.
+  prefix: "registry_pat_"

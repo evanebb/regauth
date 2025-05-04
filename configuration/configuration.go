@@ -11,6 +11,7 @@ type Configuration struct {
 	HTTP         HTTP
 	Database     Database
 	Token        Token
+	Pat          Pat
 }
 
 // SetDefaults sets the defaults for the configuration on a viper.Viper instance.
@@ -19,6 +20,7 @@ func SetDefaults(v *viper.Viper) {
 	v.SetDefault("log.formatter", "text")
 	v.SetDefault("http.addr", ":8000")
 	v.SetDefault("database.port", 5432)
+	v.SetDefault("pat.prefix", "registry_pat_")
 }
 
 func (c Configuration) IsValid() error {
@@ -26,6 +28,7 @@ func (c Configuration) IsValid() error {
 
 	c.Database.isValid(errs)
 	c.Token.isValid(errs)
+	c.Pat.isValid(errs)
 
 	if errs.HasErrors() {
 		return errs
@@ -103,5 +106,15 @@ func (c Token) isValid(errs *errorCollection) {
 
 	if c.Alg == "" {
 		errs.Add(errors.New("missing token.alg"))
+	}
+}
+
+type Pat struct {
+	Prefix string
+}
+
+func (c Pat) isValid(errs *errorCollection) {
+	if c.Prefix == "" {
+		errs.Add(errors.New("missing pat.prefix"))
 	}
 }
