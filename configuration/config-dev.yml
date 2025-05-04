@@ -18,6 +18,3 @@ token:
   certificate: keys/cert.pem
   key: keys/key.pem
   alg: RS256
-
-registry:
-  host: localhost:5000
