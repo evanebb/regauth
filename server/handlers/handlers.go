@@ -33,6 +33,7 @@ func NewHandler(
 	teamStore user.TeamStore,
 	tokenStore token.Store,
 	credentialsStore local.UserCredentialsStore,
+	tokenPrefix string,
 ) Handler {
 	return Handler{
 		logger: logger,
@@ -47,8 +48,9 @@ func NewHandler(
 			userStore: userStore,
 		},
 		TokenHandler: TokenHandler{
-			logger:     logger,
-			tokenStore: tokenStore,
+			logger:      logger,
+			tokenStore:  tokenStore,
+			tokenPrefix: tokenPrefix,
 		},
 		UserHandler: UserHandler{
 			logger:           logger,

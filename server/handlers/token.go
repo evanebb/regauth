@@ -14,8 +14,9 @@ import (
 )
 
 type TokenHandler struct {
-	logger     *slog.Logger
-	tokenStore token.Store
+	logger      *slog.Logger
+	tokenStore  token.Store
+	tokenPrefix string
 }
 
 func (h TokenHandler) CreatePersonalAccessToken(ctx context.Context, req *oas.PersonalAccessTokenRequest) (*oas.PersonalAccessTokenCreationResponse, error) {
@@ -46,7 +47,7 @@ func (h TokenHandler) CreatePersonalAccessToken(ctx context.Context, req *oas.Pe
 
 	randBytes := make([]byte, 42)
 	_, _ = rand.Read(randBytes)
-	plainTextToken := "registry_pat_" + base64.URLEncoding.EncodeToString(randBytes)
+	plainTextToken := h.tokenPrefix + base64.URLEncoding.EncodeToString(randBytes)
 
 	if err := h.tokenStore.Create(ctx, pat, plainTextToken); err != nil {
 		h.logger.ErrorContext(ctx, "could not create personal access token", slog.Any("error", err))

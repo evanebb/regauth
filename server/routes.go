@@ -26,6 +26,7 @@ func baseRouter(
 	authenticator auth.Authenticator,
 	authorizer auth.Authorizer,
 	accessTokenConfig auth.AccessTokenConfiguration,
+	tokenPrefix string,
 ) chi.Router {
 	r := chi.NewRouter()
 
@@ -42,7 +43,7 @@ func baseRouter(
 
 	r.Handle("/token", handlers.GenerateRegistryToken(logger, authenticator, authorizer, accessTokenConfig))
 
-	handler := handlers.NewHandler(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore)
+	handler := handlers.NewHandler(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, tokenPrefix)
 	securityHandler := handlers.NewSecurityHandler(logger, tokenStore, userStore, credentialsStore)
 	apiServer, err := oas.NewServer(handler, securityHandler, oas.WithNotFound(handlers.NotFound))
 	if err != nil {

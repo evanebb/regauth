@@ -21,7 +21,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
-		a := NewAuthenticator(tokenStore, userStore)
+		a := NewAuthenticator(tokenStore, userStore, "registry_pat_")
 
 		_, _, err := a.Authenticate(t.Context(), "foo", "", sourceIP)
 		if !errors.Is(err, ErrAuthenticationFailed) || !errors.Is(err, user.ErrNotFound) {
@@ -33,7 +33,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
-		a := NewAuthenticator(tokenStore, userStore)
+		a := NewAuthenticator(tokenStore, userStore, "registry_pat_")
 
 		u := user.User{
 			ID:       uuid.New(),
@@ -54,7 +54,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
-		a := NewAuthenticator(tokenStore, userStore)
+		a := NewAuthenticator(tokenStore, userStore, "registry_pat_")
 
 		u := user.User{
 			ID:       uuid.New(),
@@ -75,7 +75,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
-		a := NewAuthenticator(tokenStore, userStore)
+		a := NewAuthenticator(tokenStore, userStore, "registry_pat_")
 
 		u := user.User{
 			ID:       uuid.New(),
@@ -107,7 +107,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
-		a := NewAuthenticator(tokenStore, userStore)
+		a := NewAuthenticator(tokenStore, userStore, "registry_pat_")
 
 		u := user.User{
 			ID:       uuid.New(),
@@ -139,7 +139,7 @@ func TestAuthenticator_Authenticate(t *testing.T) {
 		t.Parallel()
 		tokenStore := memory.NewPersonalAccessTokenStore()
 		userStore := memory.NewUserStore()
-		a := NewAuthenticator(tokenStore, userStore)
+		a := NewAuthenticator(tokenStore, userStore, "registry_pat_")
 
 		u := user.User{
 			ID:       uuid.New(),

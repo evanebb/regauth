@@ -82,7 +82,7 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	tokenStore := postgres.NewPersonalAccessTokenStore(db)
 	credentialsStore := postgres.NewUserCredentialsStore(db)
 
-	authenticator := auth.NewAuthenticator(tokenStore, userStore)
+	authenticator := auth.NewAuthenticator(tokenStore, userStore, conf.Pat.Prefix)
 	authorizer := auth.NewAuthorizer(logger, repoStore, teamStore)
 
 	accessTokenConfig, err := buildAccessTokenConfiguration(conf)
@@ -90,7 +90,7 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 		return err
 	}
 
-	router := baseRouter(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, authenticator, authorizer, accessTokenConfig)
+	router := baseRouter(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, authenticator, authorizer, accessTokenConfig, conf.Pat.Prefix)
 
 	server := &http.Server{
 		Addr:    conf.HTTP.Addr,
