@@ -58,5 +58,5 @@ func buildConfiguration(args []string) (*configuration.Configuration, error) {
 		return conf, fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	return conf, err
+	return conf, nil
 }
