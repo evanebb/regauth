@@ -18,3 +18,6 @@ build:
 
 docker:
 	docker build -t localhost/evanebb/regauth:latest .
+
+generate:
+	go generate ./...
