@@ -87,6 +87,7 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	if conf.HTTP.SessionKey == "" {
 		// generate a random session key, note that sessions are lost on restart and this does not work for horizontal
 		// scaling as each instance will need the same session key
+		logger.Info("no session key given, generating random key")
 		sessionKey = securecookie.GenerateRandomKey(64)
 	}
 
