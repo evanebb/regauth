@@ -18,6 +18,9 @@ http:
   # Path to the TLS certificate/key file to use for HTTPS. If not specified, the server will listen use HTTP.
   certificate: /path/to/cert.pem
   key: /path/to/key.pem
+  # Secret key used to authenticate user sessions. Ensure that this key is sufficiently random in production, e.g. by generating it with a cryptographically secure random number generator.
+  # It will be randomly generated on startup if not given. If you are running multiple instances of regauth behind a load balancer, these must all have the same session key!
+  sessionKey: "supersecretkey"
 
 # Database (PostgreSQL) configuration
 database:
