@@ -1,6 +1,6 @@
 # Initial admin username/password
 # This will only have an effect during the first application startup, and should be removed afterward
-initialadmin:
+initialAdmin:
   username: admin
   password: admin
 
