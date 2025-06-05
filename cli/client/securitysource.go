@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/evanebb/regauth/oas"
 	"github.com/ogen-go/ogen/ogenerrors"
+	"net/http"
 )
 
 type SecuritySource struct {
@@ -18,6 +19,11 @@ func (s SecuritySource) PersonalAccessToken(ctx context.Context, operationName o
 	}
 
 	return oas.PersonalAccessToken{}, ogenerrors.ErrSkipClientSecurity
+}
+
+func (s SecuritySource) SessionAuth(_ context.Context, _ oas.OperationName, _ *http.Request) error {
+	// session authentication is not supported in this client, so always skip it
+	return ogenerrors.ErrSkipClientSecurity
 }
 
 func (s SecuritySource) UsernamePassword(ctx context.Context, operationName oas.OperationName) (oas.UsernamePassword, error) {

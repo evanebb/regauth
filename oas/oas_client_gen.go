@@ -279,11 +279,23 @@ func (c *Client) sendAddTeamMember(ctx context.Context, request *TeamMemberReque
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, AddTeamMemberOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -370,11 +382,23 @@ func (c *Client) sendChangeUserPassword(ctx context.Context, request *UserPasswo
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, ChangeUserPasswordOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -526,11 +550,23 @@ func (c *Client) sendCreateRepository(ctx context.Context, request *RepositoryRe
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, CreateRepositoryOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -598,11 +634,23 @@ func (c *Client) sendCreateTeam(ctx context.Context, request *TeamRequest) (res 
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, CreateTeamOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -670,11 +718,23 @@ func (c *Client) sendCreateUser(ctx context.Context, request *UserRequest) (res 
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, CreateUserOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -757,11 +817,23 @@ func (c *Client) sendDeletePersonalAccessToken(ctx context.Context, params Delet
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, DeletePersonalAccessTokenOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -863,11 +935,23 @@ func (c *Client) sendDeleteRepository(ctx context.Context, params DeleteReposito
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, DeleteRepositoryOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -950,11 +1034,23 @@ func (c *Client) sendDeleteTeam(ctx context.Context, params DeleteTeamParams) (r
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, DeleteTeamOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1037,11 +1133,23 @@ func (c *Client) sendDeleteUser(ctx context.Context, params DeleteUserParams) (r
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, DeleteUserOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1124,11 +1232,23 @@ func (c *Client) sendGetPersonalAccessToken(ctx context.Context, params GetPerso
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, GetPersonalAccessTokenOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1230,11 +1350,23 @@ func (c *Client) sendGetRepository(ctx context.Context, params GetRepositoryPara
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, GetRepositoryOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1317,11 +1449,23 @@ func (c *Client) sendGetTeam(ctx context.Context, params GetTeamParams) (res *Te
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, GetTeamOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1404,11 +1548,23 @@ func (c *Client) sendGetUser(ctx context.Context, params GetUserParams) (res *Us
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, GetUserOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1473,11 +1629,23 @@ func (c *Client) sendListPersonalAccessTokens(ctx context.Context) (res []Person
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, ListPersonalAccessTokensOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1542,11 +1710,23 @@ func (c *Client) sendListRepositories(ctx context.Context) (res []RepositoryResp
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, ListRepositoriesOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1630,11 +1810,23 @@ func (c *Client) sendListTeamMembers(ctx context.Context, params ListTeamMembers
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, ListTeamMembersOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1699,11 +1891,23 @@ func (c *Client) sendListTeams(ctx context.Context) (res []TeamResponse, err err
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, ListTeamsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1768,11 +1972,23 @@ func (c *Client) sendListUsers(ctx context.Context) (res []UserResponse, err err
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, ListUsersOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1874,11 +2090,23 @@ func (c *Client) sendRemoveTeamMember(ctx context.Context, params RemoveTeamMemb
 				return res, errors.Wrap(err, "security \"PersonalAccessToken\"")
 			}
 		}
+		{
+
+			switch err := c.securitySessionAuth(ctx, RemoveTeamMemberOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"SessionAuth\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {

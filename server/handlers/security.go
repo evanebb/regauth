@@ -3,10 +3,14 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/evanebb/regauth/auth/local"
 	"github.com/evanebb/regauth/oas"
 	"github.com/evanebb/regauth/token"
 	"github.com/evanebb/regauth/user"
+	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
+	"github.com/ogen-go/ogen/ogenerrors"
 	"log/slog"
 	"net/http"
 )
@@ -16,6 +20,7 @@ type SecurityHandler struct {
 	tokenStore       token.Store
 	userStore        user.Store
 	credentialsStore local.UserCredentialsStore
+	sessionStore     sessions.Store
 }
 
 func NewSecurityHandler(
@@ -23,16 +28,18 @@ func NewSecurityHandler(
 	tokenStore token.Store,
 	userStore user.Store,
 	credentialsStore local.UserCredentialsStore,
+	sessionStore sessions.Store,
 ) SecurityHandler {
 	return SecurityHandler{
 		logger:           logger,
 		tokenStore:       tokenStore,
 		userStore:        userStore,
 		credentialsStore: credentialsStore,
+		sessionStore:     sessionStore,
 	}
 }
 
-func (s SecurityHandler) HandlePersonalAccessToken(ctx context.Context, operationName oas.OperationName, t oas.PersonalAccessToken) (context.Context, error) {
+func (s SecurityHandler) HandlePersonalAccessToken(ctx context.Context, _ oas.OperationName, t oas.PersonalAccessToken) (context.Context, error) {
 	tok, err := s.tokenStore.GetByPlainTextToken(ctx, t.GetToken())
 	if err != nil {
 		if errors.Is(err, token.ErrNotFound) {
@@ -53,7 +60,54 @@ func (s SecurityHandler) HandlePersonalAccessToken(ctx context.Context, operatio
 	return WithAuthenticatedUser(ctx, u), nil
 }
 
-func (s SecurityHandler) HandleUsernamePassword(ctx context.Context, operationName oas.OperationName, t oas.UsernamePassword) (context.Context, error) {
+func (s SecurityHandler) HandleSessionAuth(ctx context.Context, _ oas.OperationName, req *http.Request) (context.Context, error) {
+	if _, err := req.Cookie("session"); errors.Is(err, http.ErrNoCookie) {
+		// no session cookie, skip this and let another scheme handle it
+		return ctx, ogenerrors.ErrSkipServerSecurity
+	}
+
+	session, err := s.sessionStore.Get(req, "session")
+	if err != nil {
+		s.logger.ErrorContext(ctx, "could not get session", slog.Any("error", err))
+		return ctx, newInternalServerErrorResponse()
+	}
+
+	val, ok := session.Values[userIDSessionKey]
+	if !ok {
+		s.logger.DebugContext(ctx, "no user ID set in session")
+		return ctx, newErrorResponse(http.StatusUnauthorized, "authentication failed")
+	}
+
+	u, err := s.getUserByRawID(ctx, val)
+	if err != nil {
+		s.logger.DebugContext(ctx, "could not get user using ID in session", slog.Any("userId", val), slog.Any("error", err))
+		return ctx, newErrorResponse(http.StatusUnauthorized, "authentication failed")
+	}
+
+	s.logger.DebugContext(ctx, "session authentication successful")
+	return WithAuthenticatedUser(ctx, u), nil
+}
+
+func (s SecurityHandler) getUserByRawID(ctx context.Context, v interface{}) (user.User, error) {
+	raw, ok := v.(string)
+	if !ok {
+		return user.User{}, errors.New("raw ID is not a string")
+	}
+
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		return user.User{}, fmt.Errorf("raw ID is not a valid UUID: %w", err)
+	}
+
+	u, err := s.userStore.GetByID(ctx, id)
+	if err != nil {
+		return user.User{}, fmt.Errorf("could not get user: %w", err)
+	}
+
+	return u, nil
+}
+
+func (s SecurityHandler) HandleUsernamePassword(ctx context.Context, _ oas.OperationName, t oas.UsernamePassword) (context.Context, error) {
 	u, err := s.userStore.GetByUsername(ctx, t.GetUsername())
 	if err != nil {
 		if errors.Is(err, user.ErrNotFound) {

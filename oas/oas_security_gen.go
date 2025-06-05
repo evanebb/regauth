@@ -16,6 +16,8 @@ import (
 type SecurityHandler interface {
 	// HandlePersonalAccessToken handles personalAccessToken security.
 	HandlePersonalAccessToken(ctx context.Context, operationName OperationName, t PersonalAccessToken) (context.Context, error)
+	// HandleSessionAuth handles sessionAuth security.
+	HandleSessionAuth(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, error)
 	// HandleUsernamePassword handles usernamePassword security.
 	HandleUsernamePassword(ctx context.Context, operationName OperationName, t UsernamePassword) (context.Context, error)
 }
@@ -35,6 +37,29 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 	return "", false
 }
 
+var operationRolesPersonalAccessToken = map[string][]string{
+	AddTeamMemberOperation:             []string{},
+	ChangeUserPasswordOperation:        []string{},
+	CreatePersonalAccessTokenOperation: []string{},
+	CreateRepositoryOperation:          []string{},
+	CreateTeamOperation:                []string{},
+	CreateUserOperation:                []string{},
+	DeletePersonalAccessTokenOperation: []string{},
+	DeleteRepositoryOperation:          []string{},
+	DeleteTeamOperation:                []string{},
+	DeleteUserOperation:                []string{},
+	GetPersonalAccessTokenOperation:    []string{},
+	GetRepositoryOperation:             []string{},
+	GetTeamOperation:                   []string{},
+	GetUserOperation:                   []string{},
+	ListPersonalAccessTokensOperation:  []string{},
+	ListRepositoriesOperation:          []string{},
+	ListTeamMembersOperation:           []string{},
+	ListTeamsOperation:                 []string{},
+	ListUsersOperation:                 []string{},
+	RemoveTeamMemberOperation:          []string{},
+}
+
 func (s *Server) securityPersonalAccessToken(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
 	var t PersonalAccessToken
 	token, ok := findAuthorization(req.Header, "Bearer")
@@ -42,6 +67,7 @@ func (s *Server) securityPersonalAccessToken(ctx context.Context, operationName 
 		return ctx, false, nil
 	}
 	t.Token = token
+	t.Roles = operationRolesPersonalAccessToken[operationName]
 	rctx, err := s.sec.HandlePersonalAccessToken(ctx, operationName, t)
 	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
 		return nil, false, nil
@@ -50,6 +76,44 @@ func (s *Server) securityPersonalAccessToken(ctx context.Context, operationName 
 	}
 	return rctx, true, err
 }
+
+var operationRolesSessionAuth = map[string][]string{
+	AddTeamMemberOperation:             []string{},
+	ChangeUserPasswordOperation:        []string{},
+	CreateRepositoryOperation:          []string{},
+	CreateTeamOperation:                []string{},
+	CreateUserOperation:                []string{},
+	DeletePersonalAccessTokenOperation: []string{},
+	DeleteRepositoryOperation:          []string{},
+	DeleteTeamOperation:                []string{},
+	DeleteUserOperation:                []string{},
+	GetPersonalAccessTokenOperation:    []string{},
+	GetRepositoryOperation:             []string{},
+	GetTeamOperation:                   []string{},
+	GetUserOperation:                   []string{},
+	ListPersonalAccessTokensOperation:  []string{},
+	ListRepositoriesOperation:          []string{},
+	ListTeamMembersOperation:           []string{},
+	ListTeamsOperation:                 []string{},
+	ListUsersOperation:                 []string{},
+	RemoveTeamMemberOperation:          []string{},
+}
+
+func (s *Server) securitySessionAuth(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
+	t := req
+	rctx, err := s.sec.HandleSessionAuth(ctx, operationName, t)
+	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+	return rctx, true, err
+}
+
+var operationRolesUsernamePassword = map[string][]string{
+	CreatePersonalAccessTokenOperation: []string{},
+}
+
 func (s *Server) securityUsernamePassword(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
 	var t UsernamePassword
 	if _, ok := findAuthorization(req.Header, "Basic"); !ok {
@@ -61,6 +125,7 @@ func (s *Server) securityUsernamePassword(ctx context.Context, operationName Ope
 	}
 	t.Username = username
 	t.Password = password
+	t.Roles = operationRolesUsernamePassword[operationName]
 	rctx, err := s.sec.HandleUsernamePassword(ctx, operationName, t)
 	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
 		return nil, false, nil
@@ -74,6 +139,8 @@ func (s *Server) securityUsernamePassword(ctx context.Context, operationName Ope
 type SecuritySource interface {
 	// PersonalAccessToken provides personalAccessToken security value.
 	PersonalAccessToken(ctx context.Context, operationName OperationName) (PersonalAccessToken, error)
+	// SessionAuth provides sessionAuth security value.
+	SessionAuth(ctx context.Context, operationName OperationName, req *http.Request) error
 	// UsernamePassword provides usernamePassword security value.
 	UsernamePassword(ctx context.Context, operationName OperationName) (UsernamePassword, error)
 }
@@ -84,6 +151,12 @@ func (s *Client) securityPersonalAccessToken(ctx context.Context, operationName 
 		return errors.Wrap(err, "security source \"PersonalAccessToken\"")
 	}
 	req.Header.Set("Authorization", "Bearer "+t.Token)
+	return nil
+}
+func (s *Client) securitySessionAuth(ctx context.Context, operationName OperationName, req *http.Request) error {
+	if err := s.sec.SessionAuth(ctx, operationName, req); err != nil {
+		return errors.Wrap(err, "security source \"SessionAuth\"")
+	}
 	return nil
 }
 func (s *Client) securityUsernamePassword(ctx context.Context, operationName OperationName, req *http.Request) error {

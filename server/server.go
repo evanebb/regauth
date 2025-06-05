@@ -12,6 +12,7 @@ import (
 	"github.com/evanebb/regauth/resources/database"
 	"github.com/evanebb/regauth/resources/database/migrations"
 	"github.com/evanebb/regauth/store/postgres"
+	"github.com/gorilla/securecookie"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/lestrrat-go/jwx/v2/jwa"
@@ -82,6 +83,15 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	tokenStore := postgres.NewPersonalAccessTokenStore(db)
 	credentialsStore := postgres.NewUserCredentialsStore(db)
 
+	sessionKey := []byte(conf.HTTP.SessionKey)
+	if conf.HTTP.SessionKey == "" {
+		// generate a random session key, note that sessions are lost on restart and this does not work for horizontal
+		// scaling as each instance will need the same session key
+		sessionKey = securecookie.GenerateRandomKey(64)
+	}
+
+	sessionStore := postgres.NewSessionStore(db, sessionKey)
+
 	authenticator := auth.NewAuthenticator(tokenStore, userStore, conf.Pat.Prefix)
 	authorizer := auth.NewAuthorizer(logger, repoStore, teamStore)
 
@@ -90,7 +100,7 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 		return err
 	}
 
-	router := baseRouter(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, authenticator, authorizer, accessTokenConfig, conf.Pat.Prefix)
+	router := baseRouter(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, sessionStore, authenticator, authorizer, accessTokenConfig, conf.Pat.Prefix)
 
 	server := &http.Server{
 		Addr:    conf.HTTP.Addr,

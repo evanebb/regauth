@@ -12,6 +12,7 @@ import (
 	"github.com/evanebb/regauth/user"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/gorilla/sessions"
 	"log/slog"
 	"net/http"
 )
@@ -23,6 +24,7 @@ func baseRouter(
 	teamStore user.TeamStore,
 	tokenStore token.Store,
 	credentialsStore local.UserCredentialsStore,
+	sessionStore sessions.Store,
 	authenticator auth.Authenticator,
 	authorizer auth.Authorizer,
 	accessTokenConfig auth.AccessTokenConfiguration,
@@ -43,8 +45,11 @@ func baseRouter(
 
 	r.Handle("/token", handlers.GenerateRegistryToken(logger, authenticator, authorizer, accessTokenConfig))
 
+	r.Post("/login", handlers.Login(logger, sessionStore, userStore, credentialsStore))
+	r.Post("/logout", handlers.Logout(logger, sessionStore))
+
 	handler := handlers.NewHandler(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, tokenPrefix)
-	securityHandler := handlers.NewSecurityHandler(logger, tokenStore, userStore, credentialsStore)
+	securityHandler := handlers.NewSecurityHandler(logger, tokenStore, userStore, credentialsStore, sessionStore)
 	apiServer, err := oas.NewServer(handler, securityHandler, oas.WithNotFound(handlers.NotFound))
 	if err != nil {
 		panic(err)

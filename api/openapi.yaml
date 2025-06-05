@@ -494,6 +494,7 @@ paths:
                 $ref: "#/components/schemas/Error"
 security:
   - personalAccessToken: [ ]
+  - sessionAuth: [ ]
 components:
   securitySchemes:
     personalAccessToken:
@@ -502,6 +503,12 @@ components:
     usernamePassword:
       type: http
       scheme: basic
+    sessionAuth:
+      # to use gorilla/sessions we need access to the raw request, which this annotation enables
+      x-ogen-custom-security: true
+      type: apiKey
+      in: cookie
+      name: session
   schemas:
     RepositoryRequest:
       type: object

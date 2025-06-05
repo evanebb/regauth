@@ -20,3 +20,7 @@ func WriteJSONResponse(w http.ResponseWriter, statusCode int, v any) {
 	w.WriteHeader(statusCode)
 	_ = json.NewEncoder(w).Encode(v)
 }
+
+func WriteJSONInternalServerError(w http.ResponseWriter) {
+	WriteJSONError(w, http.StatusInternalServerError, "internal server error")
+}

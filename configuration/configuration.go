@@ -51,6 +51,7 @@ type HTTP struct {
 	Addr        string
 	Certificate string
 	Key         string
+	SessionKey  string
 }
 
 type Database struct {

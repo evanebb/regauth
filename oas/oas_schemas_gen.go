@@ -72,6 +72,7 @@ func (s *ErrorStatusCode) SetResponse(val Error) {
 
 type PersonalAccessToken struct {
 	Token string
+	Roles []string
 }
 
 // GetToken returns the value of Token.
@@ -79,9 +80,19 @@ func (s *PersonalAccessToken) GetToken() string {
 	return s.Token
 }
 
+// GetRoles returns the value of Roles.
+func (s *PersonalAccessToken) GetRoles() []string {
+	return s.Roles
+}
+
 // SetToken sets the value of Token.
 func (s *PersonalAccessToken) SetToken(val string) {
 	s.Token = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *PersonalAccessToken) SetRoles(val []string) {
+	s.Roles = val
 }
 
 // Merged schema.
@@ -965,6 +976,7 @@ func (s *UserResponseRole) UnmarshalText(data []byte) error {
 type UsernamePassword struct {
 	Username string
 	Password string
+	Roles    []string
 }
 
 // GetUsername returns the value of Username.
@@ -977,6 +989,11 @@ func (s *UsernamePassword) GetPassword() string {
 	return s.Password
 }
 
+// GetRoles returns the value of Roles.
+func (s *UsernamePassword) GetRoles() []string {
+	return s.Roles
+}
+
 // SetUsername sets the value of Username.
 func (s *UsernamePassword) SetUsername(val string) {
 	s.Username = val
@@ -985,4 +1002,9 @@ func (s *UsernamePassword) SetUsername(val string) {
 // SetPassword sets the value of Password.
 func (s *UsernamePassword) SetPassword(val string) {
 	s.Password = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *UsernamePassword) SetRoles(val []string) {
+	s.Roles = val
 }
