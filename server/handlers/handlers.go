@@ -10,6 +10,7 @@ import (
 	"github.com/evanebb/regauth/token"
 	"github.com/evanebb/regauth/user"
 	"github.com/ogen-go/ogen/ogenerrors"
+	"github.com/ogen-go/ogen/validate"
 	"log/slog"
 	"net/http"
 )
@@ -25,7 +26,31 @@ func MethodNotAllowed(w http.ResponseWriter, _ *http.Request, allowed string) {
 
 func ErrorHandler(l *slog.Logger) ogenerrors.ErrorHandler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
-		// unknown error, log it and return an internal server error to avoid leaking information to consumers
+		var (
+			invalidContentTypeError *validate.InvalidContentTypeError
+			validateError           *validate.Error
+			decodeRequestError      *ogenerrors.DecodeRequestError
+			decodeParamsError       *ogenerrors.DecodeParamsError
+		)
+
+		switch {
+		case errors.As(err, &invalidContentTypeError):
+			response.WriteJSONError(w, http.StatusUnsupportedMediaType, "unsupported content type: "+invalidContentTypeError.ContentType)
+			return
+		case errors.As(err, &validateError):
+			response.WriteJSONError(w, http.StatusBadRequest, validateError.Error())
+			return
+		case errors.As(err, &decodeRequestError):
+			l.DebugContext(ctx, "invalid request body", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusBadRequest, "invalid request body given")
+			return
+		case errors.As(err, &decodeParamsError):
+			l.DebugContext(ctx, "invalid request params", slog.Any("error", err))
+			response.WriteJSONError(w, http.StatusBadRequest, "invalid request parameters given")
+			return
+		}
+
+		// log the error and return a generic internal server error by default, to avoid potentially leaking sensitive info
 		l.ErrorContext(ctx, "unhandled error occurred", slog.Any("error", err))
 		response.WriteJSONInternalServerError(w)
 	}
@@ -76,6 +101,7 @@ func NewHandler(
 func (h Handler) NewError(ctx context.Context, err error) *oas.ErrorStatusCode {
 	var (
 		errorStatusCode *oas.ErrorStatusCode
+		securityError   *ogenerrors.SecurityError
 	)
 
 	switch {
@@ -84,12 +110,11 @@ func (h Handler) NewError(ctx context.Context, err error) *oas.ErrorStatusCode {
 		// this should really only happen with errors returned from the SecurityHandler, since ogen will not check if
 		// those are *oas.ErrorStatusCode instances
 		return errorStatusCode
-	case errors.Is(err, ogenerrors.ErrSecurityRequirementIsNotSatisfied):
-		// no credentials given
+	case errors.Is(err, ogenerrors.ErrSecurityRequirementIsNotSatisfied), errors.As(err, &securityError):
 		return newErrorResponse(http.StatusUnauthorized, "authentication failed")
 	}
 
 	// log the error and return a generic internal server error by default, to avoid potentially leaking sensitive info
-	h.logger.ErrorContext(ctx, "unhandled error occurred: "+err.Error(), slog.Any("error", err))
+	h.logger.ErrorContext(ctx, "unhandled error occurred", slog.Any("error", err))
 	return newInternalServerErrorResponse()
 }

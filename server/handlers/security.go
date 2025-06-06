@@ -135,7 +135,7 @@ func (s SecurityHandler) HandleUsernamePassword(ctx context.Context, _ oas.Opera
 		return ctx, newErrorResponse(http.StatusUnauthorized, "authentication failed")
 	}
 
-	s.logger.DebugContext(ctx, "token authentication successful")
+	s.logger.DebugContext(ctx, "username and password authentication successful")
 	return WithAuthenticatedUser(ctx, u), nil
 }
 
