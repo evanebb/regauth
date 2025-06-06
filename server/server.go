@@ -101,7 +101,10 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 		return err
 	}
 
-	router := baseRouter(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, sessionStore, authenticator, authorizer, accessTokenConfig, conf.Pat.Prefix)
+	router, err := baseRouter(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, sessionStore, authenticator, authorizer, accessTokenConfig, conf.Pat.Prefix)
+	if err != nil {
+		return err
+	}
 
 	server := &http.Server{
 		Addr:    conf.HTTP.Addr,

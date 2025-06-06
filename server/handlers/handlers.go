@@ -14,8 +14,21 @@ import (
 	"net/http"
 )
 
-func NotFound(w http.ResponseWriter, r *http.Request) {
+func NotFound(w http.ResponseWriter, _ *http.Request) {
 	response.WriteJSONError(w, http.StatusNotFound, "requested endpoint does not exist, please refer to the API documentation")
+}
+
+func MethodNotAllowed(w http.ResponseWriter, _ *http.Request, allowed string) {
+	w.Header().Set("Allow", allowed)
+	response.WriteJSONError(w, http.StatusMethodNotAllowed, "method not allowed, please refer to the API documentation")
+}
+
+func ErrorHandler(l *slog.Logger) ogenerrors.ErrorHandler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+		// unknown error, log it and return an internal server error to avoid leaking information to consumers
+		l.ErrorContext(ctx, "unhandled error occurred", slog.Any("error", err))
+		response.WriteJSONInternalServerError(w)
+	}
 }
 
 type Handler struct {

@@ -29,7 +29,7 @@ func baseRouter(
 	authorizer auth.Authorizer,
 	accessTokenConfig auth.AccessTokenConfiguration,
 	tokenPrefix string,
-) chi.Router {
+) (chi.Router, error) {
 	r := chi.NewRouter()
 
 	loggerMiddleware := middleware.Logger(logger)
@@ -50,12 +50,18 @@ func baseRouter(
 
 	handler := handlers.NewHandler(logger, repoStore, userStore, teamStore, tokenStore, credentialsStore, tokenPrefix)
 	securityHandler := handlers.NewSecurityHandler(logger, tokenStore, userStore, credentialsStore, sessionStore)
-	apiServer, err := oas.NewServer(handler, securityHandler, oas.WithNotFound(handlers.NotFound))
+	apiServer, err := oas.NewServer(
+		handler,
+		securityHandler,
+		oas.WithNotFound(handlers.NotFound),
+		oas.WithMethodNotAllowed(handlers.MethodNotAllowed),
+		oas.WithErrorHandler(handlers.ErrorHandler(logger)),
+	)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	r.Mount("/v1/", apiServer)
 
-	return r
+	return r, nil
 }
