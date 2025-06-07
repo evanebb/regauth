@@ -87,7 +87,7 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	if conf.HTTP.SessionKey == "" {
 		// generate a random session key, note that sessions are lost on restart and this does not work for horizontal
 		// scaling as each instance will need the same session key
-		logger.Info("no session key given, generating random key")
+		logger.InfoContext(ctx, "no session key given, generating random key")
 		sessionKey = securecookie.GenerateRandomKey(64)
 	}
 
@@ -113,14 +113,14 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 
 	go func() {
 		if conf.HTTP.Certificate != "" && conf.HTTP.Key != "" {
-			logger.Info(fmt.Sprintf("starting https server on %s", server.Addr))
+			logger.InfoContext(ctx, fmt.Sprintf("starting https server on %s", server.Addr))
 			if err := server.ListenAndServeTLS(conf.HTTP.Certificate, conf.HTTP.Key); !errors.Is(err, http.ErrServerClosed) {
-				logger.Error("error listening and serving", "error", err)
+				logger.ErrorContext(ctx, "error listening and serving", "error", err)
 			}
 		} else {
-			logger.Info(fmt.Sprintf("starting http server on %s", server.Addr))
+			logger.InfoContext(ctx, fmt.Sprintf("starting http server on %s", server.Addr))
 			if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-				logger.Error("error listening and serving", "error", err)
+				logger.ErrorContext(ctx, "error listening and serving", "error", err)
 			}
 		}
 	}()
@@ -132,7 +132,7 @@ func Run(ctx context.Context, conf *configuration.Configuration) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	logger.Info("shutting down http server")
+	logger.InfoContext(ctx, "shutting down http server")
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("error shutting down http server: %w", err)
 	}

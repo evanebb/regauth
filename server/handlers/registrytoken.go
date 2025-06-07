@@ -48,11 +48,11 @@ func GenerateRegistryToken(
 			lp, lu, err := authenticator.Authenticate(r.Context(), username, password, sourceIP)
 			if err != nil {
 				if errors.Is(err, auth.ErrAuthenticationFailed) {
-					l.Info("authentication failed", "error", err)
+					l.InfoContext(r.Context(), "authentication failed", "error", err)
 					writeRegistryErrorResponse(w, "UNAUTHORIZED", "authentication failed", http.StatusUnauthorized)
 					return
 				}
-				l.Error("unknown error occurred during authentication", "error", err)
+				l.ErrorContext(r.Context(), "unknown error occurred during authentication", "error", err)
 				writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 				return
 			}
@@ -65,14 +65,14 @@ func GenerateRegistryToken(
 		requestedAccess := parseScopes(r)
 		grantedAccess, err := authorizer.AuthorizeAccess(r.Context(), u, p, requestedAccess)
 		if err != nil {
-			l.Error("unknown error occurred during authorization", "error", err)
+			l.ErrorContext(r.Context(), "unknown error occurred during authorization", "error", err)
 			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 			return
 		}
 
 		requestedService := r.URL.Query().Get("service")
 		if requestedService != tokenConfig.Service {
-			l.Info("authorization requested for unknown service")
+			l.InfoContext(r.Context(), "authorization requested for unknown service")
 			writeRegistryErrorResponse(w, "DENIED", "authorization requested for unknown service", http.StatusForbidden)
 			return
 		}
@@ -91,7 +91,7 @@ func GenerateRegistryToken(
 			Build()
 
 		if err != nil {
-			l.Error("unknown error occurred when building token", "error", err)
+			l.ErrorContext(r.Context(), "unknown error occurred when building token", "error", err)
 			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 			return
 		}
@@ -101,14 +101,14 @@ func GenerateRegistryToken(
 
 		headers := jws.NewHeaders()
 		if err := headers.Set(jws.X509CertChainKey, &certChain); err != nil {
-			l.Error("unknown error occurred when setting x5c header", "error", err)
+			l.ErrorContext(r.Context(), "unknown error occurred when setting x5c header", "error", err)
 			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 			return
 		}
 
 		signed, err := jwt.Sign(accessToken, jwt.WithKey(tokenConfig.SigningAlg, tokenConfig.SigningKey, jws.WithProtectedHeaders(headers)))
 		if err != nil {
-			l.Error("unknown error occurred when signing token", "error", err)
+			l.ErrorContext(r.Context(), "unknown error occurred when signing token", "error", err)
 			writeRegistryErrorResponse(w, "UNKNOWN", "unknown error", http.StatusInternalServerError)
 			return
 		}

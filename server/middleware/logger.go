@@ -23,7 +23,8 @@ func Logger(l *slog.Logger) func(next http.Handler) http.Handler {
 
 			duration := time.Since(start)
 
-			l.Info(
+			l.InfoContext(
+				r.Context(),
 				fmt.Sprintf("%s %s://%s%s from %s - %d in %s",
 					r.Method,
 					scheme,

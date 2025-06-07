@@ -83,14 +83,14 @@ func (a authorizer) authorizeResourceActions(
 	var granted ResourceActions
 	if r.Type != "repository" {
 		// Only authorize access to repositories
-		a.logger.Debug("cannot grant access to non-repository requests", "type", r.Type, "name", r.Name)
+		a.logger.DebugContext(ctx, "cannot grant access to non-repository requests", "type", r.Type, "name", r.Name)
 		return granted, ErrAccessNotGranted
 	}
 
 	split := strings.Split(r.Name, "/")
 	if len(split) != 2 {
 		// Only support repositories like 'namespace/name'
-		a.logger.Debug("malformed repository name given", "repository", r.Name)
+		a.logger.DebugContext(ctx, "malformed repository name given", "repository", r.Name)
 		return granted, ErrAccessNotGranted
 	}
 
@@ -98,7 +98,7 @@ func (a authorizer) authorizeResourceActions(
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
 			// If the repository cannot be found, grant no access
-			a.logger.Debug("repository not found, no access granted", "repository", r.Name)
+			a.logger.DebugContext(ctx, "repository not found, no access granted", "repository", r.Name)
 			return granted, errors.Join(ErrAccessNotGranted, err)
 		}
 		return granted, err
@@ -108,34 +108,34 @@ func (a authorizer) authorizeResourceActions(
 	// First, determine the actions that are allowed for the user
 	if authorizedNamespaces.Contains(repo.Namespace) {
 		// the repository is in an authorized namespace, allow all actions
-		a.logger.Debug("repository is in authorized namespace, all actions allowed", "repository", r.Name)
+		a.logger.DebugContext(ctx, "repository is in authorized namespace, all actions allowed", "repository", r.Name)
 		allowedActions = []string{"pull", "push", "delete"}
 	} else if repo.Visibility == repository.VisibilityPublic {
 		// If the user does not own this repository but it is public, pull access is allowed
-		a.logger.Debug("user does not own public repository, allowing pull access", "repository", r.Name, "repository", r.Name)
+		a.logger.DebugContext(ctx, "user does not own public repository, allowing pull access", "repository", r.Name, "repository", r.Name)
 		allowedActions = []string{"pull"}
 	}
 
 	// Remove actions that are not allowed by the assigned token permissions or not requested by the user
 	for _, allowedAction := range allowedActions {
 		if !slices.Contains(r.Actions, allowedAction) {
-			a.logger.Debug("action not requested", "action", allowedAction)
+			a.logger.DebugContext(ctx, "action not requested", "action", allowedAction)
 			continue
 		}
 
 		if p != nil {
 			if !slices.Contains(p.Permission.GetAllowedActions(), allowedAction) {
-				a.logger.Debug("action not allowed by personal access token permission", "action", allowedAction, "repository", r.Name)
+				a.logger.DebugContext(ctx, "action not allowed by personal access token permission", "action", allowedAction, "repository", r.Name)
 				continue
 			}
 		}
 
-		a.logger.Debug("action granted", "action", allowedAction, "repository", r.Name)
+		a.logger.DebugContext(ctx, "action granted", "action", allowedAction, "repository", r.Name)
 		granted.Actions = append(granted.Actions, allowedAction)
 	}
 
 	if len(granted.Actions) == 0 {
-		a.logger.Debug("no actions granted, removing access from result entirely", "repository", r.Name)
+		a.logger.DebugContext(ctx, "no actions granted, removing access from result entirely", "repository", r.Name)
 		return granted, ErrAccessNotGranted
 	}
 
