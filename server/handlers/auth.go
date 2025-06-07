@@ -71,13 +71,15 @@ func Login(
 			return
 		}
 
-		s.Values[userIDSessionKey] = u.ID.String()
+		userIdString := u.ID.String()
+		s.Values[userIDSessionKey] = userIdString
 		if err := s.Save(r, w); err != nil {
 			l.ErrorContext(ctx, "could not save session", slog.Any("error", err))
 			response.WriteJSONInternalServerError(w)
 			return
 		}
 
+		l.DebugContext(ctx, "login successful", slog.String("username", string(u.Username)), slog.String("userId", userIdString))
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
