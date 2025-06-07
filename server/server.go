@@ -153,7 +153,10 @@ func buildLogger(conf *configuration.Configuration) (*slog.Logger, error) {
 		return nil, fmt.Errorf("invalid log level %q given", conf.Log.Level)
 	}
 
-	logHandlerOptions := &slog.HandlerOptions{Level: level}
+	logHandlerOptions := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     level,
+	}
 
 	var handler slog.Handler
 	switch conf.Log.Formatter {
@@ -162,6 +165,8 @@ func buildLogger(conf *configuration.Configuration) (*slog.Logger, error) {
 	case "text":
 		handler = slog.NewTextHandler(os.Stderr, logHandlerOptions)
 	}
+
+	handler = newContextHandler(handler)
 
 	return slog.New(handler), nil
 }
