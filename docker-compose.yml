@@ -4,8 +4,8 @@ services:
     ports:
       - "127.0.0.1:5000:5000"
     volumes:
-      - ./registry-config.yml:/etc/distribution/config.yml:ro
-      - ./keys/cert.pem:/etc/distribution/cert.pem:ro
+      - ./registry-config.yml:/etc/distribution/config.yml:ro,Z
+      - ./keys/cert.pem:/etc/distribution/cert.pem:ro,Z
     environment:
       OTEL_TRACES_EXPORTER: none
 
@@ -18,8 +18,8 @@ services:
       - "127.0.0.1:8000:8000"
     read_only: true
     volumes:
-      - ./keys/cert.pem:/etc/regauth/cert.pem:ro
-      - ./keys/key.pem:/etc/regauth/key.pem:ro
+      - ./keys/cert.pem:/etc/regauth/cert.pem:ro,Z
+      - ./keys/key.pem:/etc/regauth/key.pem:ro,Z
     environment:
       REGAUTH_INITIALADMIN_USERNAME: admin
       REGAUTH_INITIALADMIN_PASSWORD: admin
