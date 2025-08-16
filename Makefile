@@ -1,5 +1,6 @@
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
+CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
 
 all: lint test build
 
@@ -17,4 +18,4 @@ build:
 	CGO_ENABLED=0 go build -o ./bin/regauth-cli-$(GOOS)-$(GOARCH) ./cmd/regauth-cli
 
 docker:
-	docker build -t localhost/evanebb/regauth:latest .
+	${CONTAINER_RUNTIME} build -t localhost/evanebb/regauth:latest .
